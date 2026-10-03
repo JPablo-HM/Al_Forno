@@ -1,0 +1,4 @@
+-- =============================================
+-- AL FORNO · 02 · Procedimientos almacenados
+-- (Se van agregando a partir del Día 3)
+-- =============================================

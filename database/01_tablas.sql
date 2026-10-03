@@ -1,0 +1,5 @@
+-- =============================================
+-- AL FORNO · 01 · Tablas
+-- Crea la base de datos y todas las tablas.
+-- (Se completa en el Día 2)
+-- =============================================

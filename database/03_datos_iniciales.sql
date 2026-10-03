@@ -1,0 +1,5 @@
+-- =============================================
+-- AL FORNO · 03 · Datos iniciales
+-- Administrador, categorías, menú, horario y datos de ejemplo.
+-- (Se completa en el Día 2)
+-- =============================================
