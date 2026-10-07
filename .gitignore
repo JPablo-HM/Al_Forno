@@ -1,3 +1,10 @@
 node_modules/
 .env
 .expo/
+
+# Documentos del proyecto (PDF, Word, imágenes y mockups) que no se suben a GitHub.
+# La "/" inicial aplica solo a la raíz: no afecta las imágenes de app/assets/.
+/*.pdf
+/*.docx
+/*.png
+/*.zip
