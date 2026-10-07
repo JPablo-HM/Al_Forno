@@ -10,7 +10,14 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  dateStrings: true,
+  dateStrings: true,     // Fechas como texto ("2026-10-06 18:30:00"), sin conversiones
+  timezone: '-06:00',    // Hora de Costa Rica (UTC-6, sin horario de verano)
+});
+
+// Cada conexión nueva trabaja en hora de Costa Rica. Así las columnas
+// automáticas (fecha_creacion, fecha_actualizacion) no quedan en UTC.
+pool.on('connection', (conexion) => {
+  conexion.query("SET time_zone = '-06:00'");
 });
 
 module.exports = pool;
