@@ -22,7 +22,8 @@ const RESTAURANTE = {
 // id: día de la semana, 1 = lunes … 7 = domingo.
 // Horas en formato 24 h ('17:00' = 5:00 p.m.).
 // cierraDiaSiguiente: true cuando el cierre pasa de la medianoche
-// (viernes y sábado cierran a la 1:00 a.m. del día siguiente).
+// (viernes y sábado cierran a la 1:00 a.m. del día siguiente). Inicio no
+// lo usa (solo muestra el horario); lo usarán Pedidos y Reservas.
 const HORARIO = [
   { id: 1, dia: 'Lunes',     abierto: false },
   { id: 2, dia: 'Martes',    abierto: true, apertura: '17:00', cierre: '23:00', cierraDiaSiguiente: false },

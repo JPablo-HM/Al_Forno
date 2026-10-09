@@ -29,7 +29,7 @@ export default function TabsAdmin() {
       <Tabs.Screen name="index" options={{ title: 'Pedidos', headerTitle: 'Pedidos entrantes', tabBarIcon: icono('receipt-outline') }} />
       <Tabs.Screen name="reservas" options={{ title: 'Reservas', headerTitle: 'Reservas del día', tabBarIcon: icono('calendar-outline') }} />
       <Tabs.Screen name="menu" options={{ title: 'Menú', headerTitle: 'Productos', tabBarIcon: icono('pizza-outline') }} />
-      <Tabs.Screen name="agenda" options={{ title: 'Agenda', headerTitle: 'Agenda y eventos', tabBarIcon: icono('musical-notes-outline') }} />
+      <Tabs.Screen name="agenda" options={{ title: 'Agenda', headerTitle: 'Agenda', tabBarIcon: icono('musical-notes-outline') }} />
       <Tabs.Screen name="mas" options={{ title: 'Más', tabBarIcon: icono('ellipsis-horizontal') }} />
     </Tabs>
   );

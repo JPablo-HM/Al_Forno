@@ -7,8 +7,8 @@
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
-// CUANDO SE CONSTRUYA: todas las promociones con su vigencia y si están
-// activas.
+// CUANDO SE CONSTRUYA: todas las promociones y si están activas. Una
+// promoción vencida se desactiva a mano.
 // =====================================================================
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
@@ -18,7 +18,7 @@ export default function ListaPromociones() {
     <PantallaPendiente
       hu="HU-17"
       titulo="Promociones"
-      descripcion="Todas las promociones, con su vigencia y si están activas."
+      descripcion="Todas las promociones y si están activas. Permite crear, editar y activar/desactivar."
     >
       <Boton texto="Nueva promoción" href="/admin/promocion/nuevo" />
     </PantallaPendiente>

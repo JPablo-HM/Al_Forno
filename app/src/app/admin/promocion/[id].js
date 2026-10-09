@@ -8,7 +8,8 @@
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
 // CUANDO SE CONSTRUYA: si id es "nuevo" crea; si es un número, edita.
-// Campos: título, descripción, días válidos, fecha de inicio y de fin.
+// Campos: título y descripción (los días y las fechas se escriben en la
+// descripción, ej. "Válido los martes hasta el 31 de octubre").
 // =====================================================================
 import { useLocalSearchParams } from 'expo-router';
 import PantallaPendiente from '../../../components/PantallaPendiente';
@@ -21,7 +22,7 @@ export default function FormularioPromocion() {
     <PantallaPendiente
       hu="HU-17"
       titulo={`Formulario de promoción · ${id}`}
-      descripcion="Título, descripción, días válidos, fecha de inicio y fecha de fin (no anterior al inicio)."
+      descripcion="Título y descripción. Los días y las fechas de la promoción se escriben en la descripción."
     />
   );
 }

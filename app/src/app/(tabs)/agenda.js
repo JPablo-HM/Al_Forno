@@ -7,9 +7,9 @@
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
-// CUANDO SE CONSTRUYA: pedirá la agenda a la API (GET /api/agenda):
-// actividades fijas de la semana y eventos especiales con precio y
-// espacios disponibles.
+// CUANDO SE CONSTRUYA: pedirá la agenda a la API (GET /api/agenda): una
+// sola lista con actividades y eventos. Cada uno muestra "Entrada
+// gratuita" o "Cover: ₡…"; los que tienen cover permiten comprar ticket.
 // =====================================================================
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
@@ -19,9 +19,9 @@ export default function Agenda() {
     <PantallaPendiente
       hu="HU-12"
       titulo="Agenda"
-      descripcion="Actividades fijas de la semana (entrada libre con consumo) y eventos especiales próximos con precio de entrada y espacios disponibles. Se ve sin iniciar sesión."
+      descripcion="Actividades y eventos en una sola lista, con nombre y descripción (día, fecha y hora escritos). Cada uno indica “Entrada gratuita” o “Cover: ₡…”. Se ve sin iniciar sesión."
     >
-      <Boton texto="Ver evento especial (ejemplo)" href="/eventos/1" />
+      <Boton texto="Ver evento con cover (ejemplo)" href="/eventos/7" />
     </PantallaPendiente>
   );
 }

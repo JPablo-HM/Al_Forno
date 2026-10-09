@@ -8,7 +8,7 @@
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
 // CUANDO SE CONSTRUYA: mostrará el código del ticket (AF-XXXXXXXX) como
-// código QR para presentarlo en la entrada.
+// código QR para mostrarlo en el restaurante (no se valida en la app).
 // =====================================================================
 import { useLocalSearchParams } from 'expo-router';
 import PantallaPendiente from '../../components/PantallaPendiente';
@@ -21,7 +21,7 @@ export default function MiTicket() {
     <PantallaPendiente
       hu="HU-13"
       titulo={`Mi ticket · ${id}`}
-      descripcion="Código del ticket y su código QR para presentarlo en la entrada."
+      descripcion="Código del ticket y su código QR para mostrarlo en el restaurante."
     />
   );
 }

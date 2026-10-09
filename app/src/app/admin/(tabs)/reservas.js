@@ -8,7 +8,7 @@
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
 // CUANDO SE CONSTRUYA: reservas del día ordenadas por hora, espacios
-// libres por hora y botones para marcar Asistió / No asistió o cancelar.
+// libres por hora y botón para cancelar las confirmadas.
 // =====================================================================
 import PantallaPendiente from '../../../components/PantallaPendiente';
 
@@ -17,7 +17,7 @@ export default function ReservasDia() {
     <PantallaPendiente
       hu="HU-18"
       titulo="Reservas del día"
-      descripcion="Reservas ordenadas por hora con cliente, teléfono, personas, motivo y comentario, y los espacios libres por hora. Permite marcar Asistió / No asistió y cancelar."
+      descripcion="Reservas ordenadas por hora con cliente, teléfono, personas, motivo y comentario, y los espacios libres por hora. Permite cancelar una reserva confirmada (el cliente la ve como “Cancelada”)."
     />
   );
 }

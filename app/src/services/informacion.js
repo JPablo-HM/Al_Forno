@@ -14,7 +14,7 @@ async function pedir(ruta) {
 }
 
 // HU-04 · Horario → GET /api/horario
-// Devuelve { estado: { abierto, mensaje }, dias: [{ id, dia, horas, esHoy }] }
+// Devuelve [{ id, dia, horas, esHoy }] (los 7 días)
 export function obtenerHorario() {
   return pedir('/horario');
 }

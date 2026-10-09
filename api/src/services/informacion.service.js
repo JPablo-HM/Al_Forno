@@ -2,26 +2,22 @@
 // Decide qué datos salen hacia la app y en qué formato.
 const informacionRepository = require('../repositories/informacion.repository');
 const { RESTAURANTE, HORARIO } = require('../config/restaurante');
-const { ahora, diaSemanaIso, formatearHora, estadoDelLocal } = require('../utils/tiempo');
+const { ahora, diaSemanaIso, formatearHora } = require('../utils/tiempo');
 
-// HU-04 · Horario de la semana + indicador "Abierto ahora" / "Cerrado".
-// El horario está quemado en config/restaurante.js (no usa la base de datos).
+// HU-04 · Horario de la semana (información quemada en config/restaurante.js).
+// Solo se muestra la tabla de los 7 días; no se calcula si está abierto.
+// Devuelve [{ id, dia, horas, esHoy }]. esHoy solo sirve para resaltar el
+// día actual en la app.
 function obtenerHorario() {
-  // Se toma la hora una sola vez para que "hoy" y el estado coincidan.
-  const momento = ahora();
-  const hoy = diaSemanaIso(momento);
+  const hoy = diaSemanaIso(ahora());
 
-  return {
-    // La regla de "abierto o cerrado" vive en utils/tiempo.js
-    estado: estadoDelLocal(HORARIO, momento),
-    // Lista lista para mostrar: la app no tiene que formatear horas.
-    dias: HORARIO.map((d) => ({
-      id: d.id,
-      dia: d.dia,
-      horas: d.abierto ? `${formatearHora(d.apertura)} – ${formatearHora(d.cierre)}` : 'Cerrado',
-      esHoy: d.id === hoy,
-    })),
-  };
+  return HORARIO.map((d) => ({
+    id: d.id,
+    dia: d.dia,
+    // '17:00' y '23:00' → '5:00 p.m. – 11:00 p.m.'
+    horas: d.abierto ? `${formatearHora(d.apertura)} – ${formatearHora(d.cierre)}` : 'Cerrado',
+    esHoy: d.id === hoy,
+  }));
 }
 
 // HU-05 · Ubicación y contacto. Quemado en config/restaurante.js.

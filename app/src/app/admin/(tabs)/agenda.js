@@ -1,14 +1,15 @@
 // =====================================================================
-// PANTALLA · Agenda y eventos (admin)
+// PANTALLA · Agenda (admin)
 // Ruta: /admin/agenda   ·   Historia: HU-19
 // Quién la ve: solo el administrador
 // Se llega desde: pestaña "Agenda" del panel
-// Lleva a: /admin/evento/[id] y /admin/actividad/[id] ("nuevo" para crear)
+// Lleva a: /admin/agenda/[id] ("nuevo" para crear)
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
-// CUANDO SE CONSTRUYA: lista de actividades fijas y eventos especiales con
-// entradas vendidas y espacios disponibles.
+// CUANDO SE CONSTRUYA: una sola lista con las actividades y los eventos
+// (activos y desactivados), cada uno con "Entrada gratuita" o "Cover: ₡…".
+// Permite crear, editar y activar/desactivar.
 // =====================================================================
 import PantallaPendiente from '../../../components/PantallaPendiente';
 import Boton from '../../../components/Boton';
@@ -17,11 +18,11 @@ export default function AgendaAdmin() {
   return (
     <PantallaPendiente
       hu="HU-19"
-      titulo="Agenda y eventos"
-      descripcion="Actividades fijas y eventos especiales con entradas vendidas y espacios disponibles."
+      titulo="Agenda"
+      descripcion="Actividades y eventos en una sola lista, cada uno con “Entrada gratuita” o “Cover: ₡…”. Permite crear, editar y activar/desactivar."
     >
-      <Boton texto="Nuevo evento" href="/admin/evento/nuevo" />
-      <Boton texto="Nueva actividad" href="/admin/actividad/nuevo" variante="secundario" />
+      <Boton texto="Nuevo (actividad o evento)" href="/admin/agenda/nuevo" />
+      <Boton texto="Editar (ejemplo)" href="/admin/agenda/1" variante="secundario" />
     </PantallaPendiente>
   );
 }

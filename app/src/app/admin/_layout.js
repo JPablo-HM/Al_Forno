@@ -21,9 +21,7 @@ export default function LayoutAdmin() {
       <Stack.Screen name="producto/[id]" options={{ title: 'Producto' }} />
       <Stack.Screen name="promociones" options={{ title: 'Promociones' }} />
       <Stack.Screen name="promocion/[id]" options={{ title: 'Promoción' }} />
-      <Stack.Screen name="actividad/[id]" options={{ title: 'Actividad' }} />
-      <Stack.Screen name="evento/[id]" options={{ title: 'Evento especial' }} />
-      <Stack.Screen name="validar-ticket" options={{ title: 'Validar ticket' }} />
+      <Stack.Screen name="agenda/[id]" options={{ title: 'Agenda' }} />
     </Stack>
   );
 }
