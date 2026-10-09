@@ -3,8 +3,9 @@
 // Historia: HU-06
 // Datos: GET /api/promociones (services/informacion.js)
 //
-// Muestra las promociones vigentes con título, descripción, días válidos
-// y fecha de vencimiento. Son informativas: no aplican descuentos.
+// Muestra las promociones activas con título y descripción. Los días y
+// las fechas vienen escritos en la descripción (ej. "Válido los martes
+// hasta el 31 de octubre"). Son informativas: no aplican descuentos.
 // Si no hay, muestra "No hay promociones por el momento" y un botón al Menú.
 // =====================================================================
 import { useEffect, useState } from 'react';
@@ -53,13 +54,6 @@ export default function SeccionPromociones() {
           <Ionicons name="pricetag-outline" size={20} color={COLORES.terracota} />
         </View>
         <Text style={estilos.promoDescripcion}>{p.descripcion}</Text>
-        {/* Días válidos como etiquetas */}
-        <View style={estilos.etiquetas}>
-          {p.dias.map((dia) => (
-            <Text key={dia} style={estilos.etiqueta}>{dia}</Text>
-          ))}
-        </View>
-        <Text style={estilos.vence}>Vence: {p.vence}</Text>
       </View>
     ));
   }
@@ -79,9 +73,6 @@ const estilos = StyleSheet.create({
   promoEncabezado: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   promoTitulo: { flex: 1, fontSize: 18, fontWeight: 'bold', color: COLORES.texto, marginRight: 8 },
   promoDescripcion: { color: COLORES.textoSuave, marginTop: 4, lineHeight: 20 },
-  etiquetas: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
-  etiqueta: { borderWidth: 1, borderColor: COLORES.textoSuave, borderRadius: 12, paddingVertical: 2, paddingHorizontal: 10, marginRight: 6, marginBottom: 6, color: COLORES.texto, fontSize: 13 },
-  vence: { fontWeight: 'bold', color: COLORES.texto, marginTop: 4 },
   vacio: { alignItems: 'center', paddingVertical: 8 },
   vacioTitulo: { fontSize: 17, fontWeight: 'bold', color: COLORES.texto, marginTop: 8, textAlign: 'center' },
   vacioTexto: { color: COLORES.textoSuave, textAlign: 'center', marginTop: 4 },

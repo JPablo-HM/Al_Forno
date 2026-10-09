@@ -26,7 +26,7 @@ export function obtenerRestaurante() {
 }
 
 // HU-06 · Promociones → GET /api/promociones
-// Devuelve [{ id, titulo, descripcion, dias, vence }] (puede venir vacía)
+// Devuelve [{ id, titulo, descripcion }] (puede venir vacía)
 export function listarPromociones() {
   return pedir('/promociones');
 }

@@ -21,13 +21,13 @@ function diaSemanaIso(momento) {
   return momento.day() === 0 ? 7 : momento.day();
 }
 
-// '17:30:00' → 1050 (minutos desde la medianoche). Sirve para comparar horas.
+// '17:30' → 1050 (minutos desde la medianoche). Sirve para comparar horas.
 function aMinutos(hora) {
   const [h, m] = hora.split(':').map(Number);
   return h * 60 + m;
 }
 
-// '17:00:00' → '5:00 p.m.' · '12:00:00' → '12:00 m.d.' · '01:00:00' → '1:00 a.m.'
+// '17:00' → '5:00 p.m.' · '12:00' → '12:00 m.d.' · '01:00' → '1:00 a.m.'
 function formatearHora(hora) {
   const [h, m] = hora.split(':').map(Number);
   const minutos = String(m).padStart(2, '0');
@@ -43,16 +43,9 @@ function aLas(hora) {
   return texto.startsWith('1:') ? `a la ${texto}` : `a las ${texto}`;
 }
 
-// '2026-10-31' → '31 oct 2026'
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-function formatearFecha(fecha) {
-  const [anio, mes, dia] = fecha.split('-').map(Number);
-  return `${dia} ${MESES[mes - 1]} ${anio}`;
-}
-
 // HU-04 · ¿El local está abierto en este momento?
-// Recibe las 7 filas del horario ({ dia_semana_id, dia, abierto, hora_apertura,
-// hora_cierre, cierra_dia_siguiente }) y devuelve { abierto, mensaje }.
+// Recibe el HORARIO de config/restaurante.js ({ id, dia, abierto, apertura,
+// cierre, cierraDiaSiguiente }) y devuelve { abierto, mensaje }.
 // Revisa en este orden:
 //   1. ¿Sigue abierto el turno de AYER? (viernes y sábado cierran a la 1:00 a.m.)
 //   2. ¿Está abierto el turno de HOY?
@@ -61,27 +54,27 @@ function estadoDelLocal(horario, momento = ahora()) {
   const hoy = diaSemanaIso(momento);
   const ayer = hoy === 1 ? 7 : hoy - 1;
   const minutosAhora = momento.hour() * 60 + momento.minute();
-  const buscarDia = (id) => horario.find((d) => d.dia_semana_id === id);
+  const buscarDia = (id) => horario.find((d) => d.id === id);
 
   // 1. Turno de ayer que pasa de la medianoche
   const diaAyer = buscarDia(ayer);
-  if (diaAyer && diaAyer.abierto && diaAyer.cierra_dia_siguiente
-      && minutosAhora < aMinutos(diaAyer.hora_cierre)) {
-    return { abierto: true, mensaje: `Cierra hoy ${aLas(diaAyer.hora_cierre)}` };
+  if (diaAyer && diaAyer.abierto && diaAyer.cierraDiaSiguiente
+      && minutosAhora < aMinutos(diaAyer.cierre)) {
+    return { abierto: true, mensaje: `Cierra hoy ${aLas(diaAyer.cierre)}` };
   }
 
   // 2. Turno de hoy
   const diaHoy = buscarDia(hoy);
   if (diaHoy && diaHoy.abierto) {
-    const apertura = aMinutos(diaHoy.hora_apertura);
-    const cierre = aMinutos(diaHoy.hora_cierre);
+    const apertura = aMinutos(diaHoy.apertura);
+    const cierre = aMinutos(diaHoy.cierre);
     // Si cierra al día siguiente, desde la apertura hasta medianoche está abierto.
-    if (minutosAhora >= apertura && (diaHoy.cierra_dia_siguiente || minutosAhora < cierre)) {
-      const cuando = diaHoy.cierra_dia_siguiente ? 'Cierra' : 'Cierra hoy';
-      return { abierto: true, mensaje: `${cuando} ${aLas(diaHoy.hora_cierre)}` };
+    if (minutosAhora >= apertura && (diaHoy.cierraDiaSiguiente || minutosAhora < cierre)) {
+      const cuando = diaHoy.cierraDiaSiguiente ? 'Cierra' : 'Cierra hoy';
+      return { abierto: true, mensaje: `${cuando} ${aLas(diaHoy.cierre)}` };
     }
     if (minutosAhora < apertura) {
-      return { abierto: false, mensaje: `Abre hoy ${aLas(diaHoy.hora_apertura)}` };
+      return { abierto: false, mensaje: `Abre hoy ${aLas(diaHoy.apertura)}` };
     }
   }
 
@@ -91,10 +84,10 @@ function estadoDelLocal(horario, momento = ahora()) {
     const dia = buscarDia(id);
     if (dia && dia.abierto) {
       const cuando = i === 1 ? 'mañana' : `el ${dia.dia.toLowerCase()}`;
-      return { abierto: false, mensaje: `Abre ${cuando} ${aLas(dia.hora_apertura)}` };
+      return { abierto: false, mensaje: `Abre ${cuando} ${aLas(dia.apertura)}` };
     }
   }
   return { abierto: false, mensaje: 'Horario no disponible' };
 }
 
-module.exports = { ahora, ZONA, diaSemanaIso, formatearHora, formatearFecha, estadoDelLocal };
+module.exports = { ahora, ZONA, diaSemanaIso, formatearHora, estadoDelLocal };
