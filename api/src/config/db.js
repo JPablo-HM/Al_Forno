@@ -8,6 +8,8 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  // Si las 10 conexiones están ocupadas, la petición espera su turno en
+  // lugar de fallar.
   waitForConnections: true,
   connectionLimit: 10,
   dateStrings: true,     // Fechas como texto ("2026-10-06 18:30:00"), sin conversiones
@@ -20,4 +22,5 @@ pool.on('connection', (conexion) => {
   conexion.query("SET time_zone = '-06:00'");
 });
 
+// Los repositorios importan este pool para ejecutar los procedimientos.
 module.exports = pool;

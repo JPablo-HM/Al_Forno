@@ -4,12 +4,18 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORES } from '../../config/config';
 
+// Devuelve la función que dibuja el ícono de una pestaña. La barra le pasa
+// el color (cambia si la pestaña está activa) y el tamaño. Los nombres de
+// los íconos son de Ionicons (@expo/vector-icons).
 function icono(nombre) {
   return ({ color, size }) => <Ionicons name={nombre} color={color} size={size} />;
 }
 
 export default function TabsCliente() {
   return (
+    // Tabs = menú inferior. Cada Tabs.Screen apunta a un archivo de esta carpeta:
+    // name="index" → index.js, name="menu" → menu.js, etc.
+    // title es el texto de la pestaña; headerTitle, el de la barra superior.
     <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: COLORES.negro },

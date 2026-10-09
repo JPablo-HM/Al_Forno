@@ -38,6 +38,28 @@
 --  hora de Costa Rica (UTC-6) sin importar la zona del servidor.
 -- =====================================================================
 
+-- ---------------------------------------------------------------------
+--  CÓMO LEER UN PROCEDIMIENTO
+--  · DELIMITER $$ cambia el fin de instrucción de ";" a "$$" para que MySQL
+--    no corte el procedimiento en el primer ";" que tiene adentro.
+--  · DROP ... IF EXISTS + CREATE: permite volver a ejecutar el archivo.
+--  · p_... = parámetro que envía la API.  v_... = variable local.
+--  · DECLARE: declara variables y manejadores (siempre al inicio del BEGIN).
+--  · DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+--    → si ocurre cualquier error: deshace la transacción y reenvía el error.
+--  · DECLARE EXIT HANDLER FOR 1062 → 1062 es "valor duplicado" (un UNIQUE).
+--  · SELECT ... INTO v_x: guarda el resultado de la consulta en una variable.
+--  · CALL sp_error(5409, 'mensaje'): corta con un error de negocio que la
+--    API convierte en HTTP 409 (código - 5000).
+--  · START TRANSACTION ... COMMIT: todo lo de adentro se guarda junto o nada.
+--  · SELECT ... FOR UPDATE: bloquea las filas leídas hasta el COMMIT; otra
+--    transacción que quiera esas filas espera su turno (control de cupos).
+--  · FOR SHARE: bloqueo de lectura (se puede leer, pero no modificar).
+--  · JSON_TABLE(...): convierte un arreglo JSON (el carrito) en filas.
+--  · LAST_INSERT_ID(): el id que AUTO_INCREMENT le dio a la última fila.
+--  · El último SELECT de cada procedimiento es lo que recibe la API.
+-- ---------------------------------------------------------------------
+
 -- Los scripts están en UTF-8. SET NAMES evita que las tildes, la ñ y el ₡
 -- se guarden dañadas si el cliente de MySQL usa otra codificación.
 SET NAMES utf8mb4;
@@ -693,6 +715,7 @@ BEGIN
     IF v_orden_actual IS NULL THEN
       CALL sp_error(5404, 'El pedido no existe');
     END IF;
+    -- Solo se avanza un paso a la vez: el orden nuevo debe ser el actual + 1.
     IF v_orden_nuevo <> v_orden_actual + 1 THEN
       CALL sp_error(5409, 'El estado debe cambiar en orden (el pedido ya cambió o el paso no es válido)');
     END IF;

@@ -1,5 +1,15 @@
-// HU-11 · Mis reservas
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Mis reservas
+// Ruta: /mis-reservas   ·   Historia: HU-11
+// Quién la ve: solo clientes con sesión iniciada
+// Se llega desde: Reservas o Perfil → "Mis reservas"
+// Lleva a: — 
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: lista de reservas próximas con su estado; permitirá
+// cancelar hasta 2 horas antes, pidiendo confirmación.
+// =====================================================================
 import PantallaPendiente from '../components/PantallaPendiente';
 
 export default function MisReservas() {

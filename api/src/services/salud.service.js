@@ -3,6 +3,8 @@ const saludRepository = require('../repositories/salud.repository');
 const { ahora } = require('../utils/tiempo');
 
 async function obtenerEstado() {
+  // Aquí SÍ se usa try/catch: si MySQL no responde no es un error de la API,
+  // es parte de la información que se quiere mostrar.
   let baseDeDatos = 'conectada';
   try {
     await saludRepository.probarConexion();
@@ -10,6 +12,7 @@ async function obtenerEstado() {
     baseDeDatos = 'sin conexión: ' + error.message;
   }
 
+  // Este objeto es lo que verá la app (o el navegador) en formato JSON.
   return {
     api: 'funcionando',
     baseDeDatos,

@@ -7,6 +7,15 @@
 --  Los catálogos (roles, días, estados, motivos) ya vienen en 01_tablas.sql.
 -- =====================================================================
 
+-- ---------------------------------------------------------------------
+--  CÓMO LEER ESTE ARCHIVO
+--  · Todo va entre START TRANSACTION y COMMIT: si un INSERT falla, no queda
+--    nada a medias.
+--  · Algunos INSERT ponen el id a mano (id = 1) porque otros datos lo
+--    referencian: creado_por = 1 es el administrador.
+--  · Las tablas validan estos datos con sus CHECK (horas, teléfonos, precios).
+-- ---------------------------------------------------------------------
+
 -- Los scripts están en UTF-8. SET NAMES evita que las tildes, la ñ y el ₡
 -- se guarden dañadas si el cliente de MySQL usa otra codificación.
 SET NAMES utf8mb4;

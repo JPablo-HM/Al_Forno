@@ -4,9 +4,13 @@
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { COLORES } from '../config/config';
 
+// Props: hu (número de historia), titulo, descripcion y children.
+// children = lo que se escribe entre <PantallaPendiente> y </PantallaPendiente>
+// (los botones del flujo).
 export default function PantallaPendiente({ hu, titulo, descripcion, children }) {
   return (
     <ScrollView style={{ backgroundColor: COLORES.crema }} contentContainerStyle={estilos.contenedor}>
+      {/* Si hay número de historia lo muestra; si no, no dibuja nada (null) */}
       {hu ? <Text style={estilos.hu}>{hu}</Text> : null}
       <Text style={estilos.titulo}>{titulo}</Text>
       {descripcion ? <Text style={estilos.descripcion}>{descripcion}</Text> : null}

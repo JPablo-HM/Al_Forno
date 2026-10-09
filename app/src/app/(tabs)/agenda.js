@@ -1,5 +1,16 @@
-// HU-12 · Agenda
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Agenda (pestaña del cliente)
+// Ruta: /agenda   ·   Historia: HU-12
+// Quién la ve: visitantes y clientes (no necesita sesión)
+// Se llega desde: pestaña "Agenda" del menú inferior
+// Lleva a: /eventos/[id]
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: pedirá la agenda a la API (GET /api/agenda):
+// actividades fijas de la semana y eventos especiales con precio y
+// espacios disponibles.
+// =====================================================================
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
 

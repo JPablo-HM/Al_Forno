@@ -19,19 +19,29 @@ import { StatusBar } from 'expo-status-bar';
 import { SesionProvider, useSesion } from '../context/SesionContext';
 import { COLORES } from '../config/config';
 
+// RootLayout es lo primero que se dibuja. Envuelve toda la app con
+// SesionProvider para que cualquier pantalla pueda usar useSesion().
 export default function RootLayout() {
   return (
     <SesionProvider>
       <Navegacion />
+      {/* Barra de estado del teléfono (hora, batería) con letras claras */}
       <StatusBar style="light" />
     </SesionProvider>
   );
 }
 
+// Va separado de RootLayout porque useSesion() solo funciona DENTRO del
+// SesionProvider. Cada vez que la sesión cambia, esta función se vuelve a
+// ejecutar y los "guard" de abajo se recalculan.
 function Navegacion() {
   const { usuario, esCliente, esAdmin } = useSesion();
 
   return (
+    // Stack = navegación en pila: cada pantalla nueva se pone encima y la
+    // flecha "atrás" regresa. screenOptions da el estilo común de la barra
+    // superior (fondo negro, letras crema). Cada Stack.Screen recibe el nombre
+    // del archivo (sin .js) y su título.
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: COLORES.negro },
@@ -57,6 +67,7 @@ function Navegacion() {
         <Stack.Screen name="carrito" options={{ title: 'Carrito' }} />
         <Stack.Screen name="resumen-pedido" options={{ title: 'Resumen del pedido' }} />
         <Stack.Screen name="pago" options={{ title: 'Pago' }} />
+        {/* headerBackVisible: false → sin flecha "atrás", para no volver a la pantalla de pago */}
         <Stack.Screen name="comprobante/[id]" options={{ title: 'Comprobante', headerBackVisible: false }} />
         <Stack.Screen name="mis-pedidos/index" options={{ title: 'Mis pedidos' }} />
         <Stack.Screen name="mis-pedidos/[id]" options={{ title: 'Estado del pedido' }} />

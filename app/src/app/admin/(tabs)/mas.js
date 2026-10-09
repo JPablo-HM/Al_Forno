@@ -1,5 +1,16 @@
-// HU-17 · HU-19 · Más opciones del administrador
-// Promociones, validar tickets en la entrada, historial y cerrar sesión.
+// =====================================================================
+// PANTALLA · Más opciones (admin)
+// Ruta: /admin/mas   ·   Historia: HU-14, HU-17, HU-19
+// Quién la ve: solo el administrador
+// Se llega desde: pestaña "Más" del panel
+// Lleva a: /admin/promociones, /admin/validar-ticket, /admin/historial-pedidos
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: se mantiene como menú de opciones. El botón "Cerrar
+// sesión" ya funciona: borra la sesión y la navegación vuelve sola a la
+// app de clientes.
+// =====================================================================
 import PantallaPendiente from '../../../components/PantallaPendiente';
 import Boton from '../../../components/Boton';
 import { useSesion } from '../../../context/SesionContext';

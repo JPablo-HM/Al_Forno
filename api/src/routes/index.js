@@ -2,9 +2,16 @@
 const { Router } = require('express');
 const saludController = require('../controllers/salud.controller');
 
+// Router agrupa rutas. En app.js se monta en '/api', por eso
+// Método GET + ruta '/salud' → función verificar del controlador.
+// POST/PUT/PATCH/DELETE se definen igual: router.post('/pedidos', ...).
+// router.get('/salud') queda como GET /api/salud.
 const router = Router();
 
 router.get('/salud', saludController.verificar);
+
+// Módulo Información (Inicio): /api/restaurante, /api/horario, /api/promociones
+router.use(require('./informacion.routes'));
 
 // Próximos módulos (se agregan día a día):
 // router.use('/auth', require('./auth.routes'));

@@ -1,13 +1,33 @@
-// HU-04 · HU-05 · HU-06 · Inicio
-// Pantalla temporal: se reemplaza al construir la pantalla real.
-import PantallaPendiente from '../../components/PantallaPendiente';
+// =====================================================================
+// PANTALLA · Inicio (pestaña del cliente)
+// Ruta: /   ·   Historia: HU-04, HU-05, HU-06
+// Quién la ve: visitantes y clientes (no necesita sesión)
+// Se llega desde: es la primera pantalla al abrir la app; pestaña "Inicio" del menú inferior
+// Lleva a: /menu (botón "Ver menú" cuando no hay promociones)
+//
+// La pantalla solo ordena las secciones. Cada sección es un componente
+// de src/components/ que pide sus propios datos a la API:
+//   · Horario       (HU-04) → components/SeccionHorario.js      (GET /api/horario)
+//   · Ubicación     (HU-05) → components/SeccionUbicacion.js    (GET /api/restaurante)
+//   · Promociones   (HU-06) → components/SeccionPromociones.js  (GET /api/promociones)
+// =====================================================================
+import { ScrollView, StyleSheet } from 'react-native';
+import SeccionHorario from '../../components/SeccionHorario';
+import SeccionUbicacion from '../../components/SeccionUbicacion';
+import SeccionPromociones from '../../components/SeccionPromociones';
+import { COLORES } from '../../config/config';
 
 export default function Inicio() {
   return (
-    <PantallaPendiente
-      hu="HU-04 · HU-05 · HU-06"
-      titulo="Inicio"
-      descripcion="Horario de la semana con el indicador “Abierto ahora” o “Cerrado” (hora de Costa Rica), dirección con señas, teléfono/WhatsApp y promociones vigentes. Se ve sin iniciar sesión."
-    />
+    <ScrollView style={estilos.fondo} contentContainerStyle={estilos.contenedor}>
+      <SeccionHorario />
+      <SeccionUbicacion />
+      <SeccionPromociones />
+    </ScrollView>
   );
 }
+
+const estilos = StyleSheet.create({
+  fondo: { backgroundColor: COLORES.crema },
+  contenedor: { padding: 16, paddingBottom: 32 },
+});

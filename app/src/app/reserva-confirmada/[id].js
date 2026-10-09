@@ -1,10 +1,22 @@
-// HU-10 · Reserva confirmada
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Reserva confirmada
+// Ruta: /reserva-confirmada/[id]   ·   Historia: HU-10
+// Quién la ve: solo clientes con sesión iniciada
+// Se llega desde: Nueva reserva (no tiene flecha "atrás")
+// Lleva a: /mis-reservas y / (Inicio)
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: mostrará el resumen de la reserva creada con estado
+// "Confirmada".
+// =====================================================================
 import { useLocalSearchParams } from 'expo-router';
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
 
 export default function ReservaConfirmada() {
+  // Lee la parte variable de la ruta ([id] en el nombre del archivo).
+  // Ej.: en /reserva-confirmada/15, id vale "15" (siempre llega como texto).
   const { id } = useLocalSearchParams();
   return (
     <PantallaPendiente

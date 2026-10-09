@@ -1,5 +1,15 @@
-// HU-19 · Agenda y eventos
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Agenda y eventos (admin)
+// Ruta: /admin/agenda   ·   Historia: HU-19
+// Quién la ve: solo el administrador
+// Se llega desde: pestaña "Agenda" del panel
+// Lleva a: /admin/evento/[id] y /admin/actividad/[id] ("nuevo" para crear)
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: lista de actividades fijas y eventos especiales con
+// entradas vendidas y espacios disponibles.
+// =====================================================================
 import PantallaPendiente from '../../../components/PantallaPendiente';
 import Boton from '../../../components/Boton';
 

@@ -1,5 +1,15 @@
-// HU-17 · Promociones
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Promociones (admin)
+// Ruta: /admin/promociones   ·   Historia: HU-17
+// Quién la ve: solo el administrador
+// Se llega desde: Más → "Promociones"
+// Lleva a: /admin/promocion/[id]
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: todas las promociones con su vigencia y si están
+// activas.
+// =====================================================================
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
 

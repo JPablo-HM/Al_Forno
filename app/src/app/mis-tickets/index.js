@@ -1,5 +1,15 @@
-// HU-13 · Mis tickets
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Mis tickets
+// Ruta: /mis-tickets   ·   Historia: HU-13
+// Quién la ve: solo clientes con sesión iniciada
+// Se llega desde: Perfil → "Mis tickets"
+// Lleva a: /mis-tickets/[id]
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: lista de tickets comprados con evento, fecha,
+// cantidad, código y estado (Válido o Usado).
+// =====================================================================
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
 

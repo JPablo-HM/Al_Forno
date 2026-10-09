@@ -5,6 +5,8 @@ import { COLORES } from '../../config/config';
 
 export default function LayoutAdmin() {
   return (
+    // Pila propia del administrador: abajo las pestañas (tabs) y, encima de
+    // ellas, las pantallas de detalle que se abren desde las pestañas.
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: COLORES.negro },

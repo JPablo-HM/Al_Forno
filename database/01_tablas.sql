@@ -15,6 +15,25 @@
 --    Úselo solo en desarrollo o en una instalación nueva.
 -- =====================================================================
 
+-- ---------------------------------------------------------------------
+--  CÓMO LEER ESTE ARCHIVO
+--  · CREATE TABLE nombre ( columnas..., restricciones... ) crea una tabla.
+--  · Tipos: INT UNSIGNED (entero sin negativos), TINYINT/SMALLINT (enteros
+--    pequeños), VARCHAR(n) (texto de hasta n), CHAR(n) (texto de largo fijo),
+--    BOOLEAN (0 o 1), DATE (fecha), TIME (hora), DATETIME (fecha y hora).
+--  · NOT NULL: dato obligatorio.  NULL: puede quedar vacío.
+--  · DEFAULT: valor que se usa si no se envía uno.
+--  · AUTO_INCREMENT: MySQL asigna 1, 2, 3... automáticamente.
+--  · Prefijos de las restricciones (así los errores dicen qué regla falló):
+--      pk_ llave primaria    fk_ llave foránea    uq_ valor único
+--      ck_ CHECK (condición que debe cumplirse)    ix_ índice
+--  · Columna "AS (...) STORED": columna generada. MySQL la calcula sola a
+--    partir de otras columnas y nunca se escribe a mano.
+--  · ON UPDATE CURRENT_TIMESTAMP: la fecha se actualiza sola al modificar la fila.
+--  · ENGINE = InnoDB: motor que soporta llaves foráneas y transacciones.
+--  · COMMENT: descripción que queda guardada dentro de MySQL.
+-- ---------------------------------------------------------------------
+
 -- Los scripts están en UTF-8. SET NAMES evita que las tildes, la ñ y el ₡
 -- se guarden dañadas si el cliente de MySQL usa otra codificación.
 SET NAMES utf8mb4;

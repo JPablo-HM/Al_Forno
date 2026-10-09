@@ -1,10 +1,22 @@
-// HU-08 · Comprobante
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Comprobante del pedido
+// Ruta: /comprobante/[id]   ·   Historia: HU-08
+// Quién la ve: solo clientes con sesión iniciada
+// Se llega desde: Pago aprobado (no tiene flecha "atrás" para no volver a pagar)
+// Lleva a: /mis-pedidos/[id] y / (Inicio)
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: pedirá el pedido a la API y mostrará número, fecha
+// y hora, productos, total y los últimos 4 dígitos de la tarjeta.
+// =====================================================================
 import { useLocalSearchParams } from 'expo-router';
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
 
 export default function Comprobante() {
+  // Lee la parte variable de la ruta ([id] en el nombre del archivo).
+  // Ej.: en /comprobante/15, id vale "15" (siempre llega como texto).
   const { id } = useLocalSearchParams();
   return (
     <PantallaPendiente

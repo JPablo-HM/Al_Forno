@@ -1,5 +1,16 @@
-// HU-07 · Resumen del pedido
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Resumen del pedido
+// Ruta: /resumen-pedido   ·   Historia: HU-07
+// Quién la ve: solo clientes con sesión iniciada
+// Se llega desde: Carrito → "Continuar"
+// Lleva a: /pago
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: mostrará el pedido completo antes de pagar. La API
+// validará que se pida dentro del horario y hasta 30 minutos antes del
+// cierre.
+// =====================================================================
 import PantallaPendiente from '../components/PantallaPendiente';
 import Boton from '../components/Boton';
 

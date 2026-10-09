@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const rutas = require('./routes');
 const { noEncontrado, manejarErrores } = require('./middlewares/errores');
 
+// Crea la aplicación. Los app.use se ejecutan EN ORDEN en cada petición:
+// primero seguridad y lectura del JSON, luego las rutas y al final los errores.
 const app = express();
 
 app.use(helmet());          // Encabezados de seguridad
@@ -16,4 +18,5 @@ app.use('/api', rutas);     // Todas las rutas empiezan con /api
 app.use(noEncontrado);      // 404 para rutas que no existen
 app.use(manejarErrores);    // Errores centralizados
 
+// Se exporta para que server.js la encienda.
 module.exports = app;

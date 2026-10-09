@@ -9,3 +9,6 @@ node_modules/
 /*.png
 /*.zip
 /index_1.html
+
+# Carpeta de documentos de defensa (PDF y Word): tampoco se sube.
+/Doc/

@@ -1,5 +1,15 @@
-// HU-09 · Mis pedidos
-// Pantalla temporal: se reemplaza al construir la pantalla real.
+// =====================================================================
+// PANTALLA · Mis pedidos
+// Ruta: /mis-pedidos   ·   Historia: HU-09
+// Quién la ve: solo clientes con sesión iniciada
+// Se llega desde: Perfil → "Mis pedidos"
+// Lleva a: /mis-pedidos/[id]
+//
+// ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
+// pantalla y los botones para seguir el flujo del mapa de navegación.
+// CUANDO SE CONSTRUYA: lista de pedidos del cliente, del más reciente al
+// más antiguo, con número, fecha, total y estado (GET /api/pedidos/mios).
+// =====================================================================
 import PantallaPendiente from '../../components/PantallaPendiente';
 import Boton from '../../components/Boton';
 

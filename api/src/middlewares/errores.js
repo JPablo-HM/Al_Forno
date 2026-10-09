@@ -1,9 +1,12 @@
 // Manejo central de errores: el cliente recibe mensajes claros,
 // nunca detalles internos de la base de datos.
+// Se ejecuta si ninguna ruta coincidió con la URL pedida.
 function noEncontrado(req, res) {
   res.status(404).json({ mensaje: 'Ruta no encontrada' });
 }
 
+// Express reconoce un manejador de errores porque recibe 4 parámetros
+// (err, req, res, next). Por eso next se declara aunque no se use.
 // eslint-disable-next-line no-unused-vars
 function manejarErrores(err, req, res, next) {
   // Errores de negocio de los procedimientos almacenados.

@@ -1,11 +1,16 @@
-// HU-02 · HU-14 · Iniciar sesión (diseño: mockup HU-02)
-// Un mismo login para clientes y administradores: el rol decide a dónde va.
-// Al iniciar sesión, la navegación lleva al cliente a Inicio y al
-// administrador directo a su panel (ver src/app/_layout.js).
+// =====================================================================
+// PANTALLA · Iniciar sesión          Ruta: /login   ·   HU-02, HU-14
+// Quién la ve: solo visitantes sin sesión (Perfil → "Iniciar sesión").
+// Diseño: mockup HU-02 con los colores de AL FORNO.
 //
-// ⚠ CASCARÓN: valida contra dos usuarios quemados (src/services/auth.js).
-//   Cliente: cliente@alforno.cr / cliente123
-//   Admin:   admin@alforno.cr   / admin123
+// Un mismo login para clientes y administradores: el ROL decide a dónde va.
+// Al iniciar sesión no hace falta navegar a mano: _layout.js ve que la
+// sesión cambió y lleva al cliente a Inicio y al administrador a /admin.
+//
+// CASCARÓN: valida contra dos usuarios quemados (src/services/auth.js).
+//   Cliente: cliente.alforno / cliente123
+//   Admin:   admin.alforno   / admin123
+// =====================================================================
 import { useState } from 'react';
 import { ScrollView, View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
@@ -15,12 +20,18 @@ import { login } from '../services/auth';
 import { COLORES } from '../config/config';
 
 export default function Login() {
+  // Del contexto de sesión: guarda al usuario y con eso cambia la navegación.
   const { iniciarSesion } = useSesion();
+  // Estado de la pantalla (useState): [valor, función para cambiarlo].
+  // Cada vez que un estado cambia, React vuelve a dibujar la pantalla.
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState(false);
+  // true → se muestra el recuadro "Correo o contraseña incorrectos."
 
+  // Se ejecuta al tocar "INICIAR SESIÓN" o al dar Enter en la contraseña.
   function alIniciarSesion() {
+    // Busca el usuario en la lista de prueba: devuelve el usuario o null.
     const usuario = login(correo, contrasena);
     if (!usuario) {
       setError(true);
@@ -39,6 +50,7 @@ export default function Login() {
       <Text style={estilos.titulo}>Bienvenido de nuevo</Text>
       <Text style={estilos.subtitulo}>Ingresá con tu correo y contraseña.</Text>
 
+      {/* Solo se dibuja si error es true (condición ? se muestra : null) */}
       {error ? (
         <View style={estilos.error}>
           <Ionicons name="alert-circle-outline" size={20} color={COLORES.texto} />
@@ -46,6 +58,8 @@ export default function Login() {
         </View>
       ) : null}
 
+      {/* Campos "controlados": value muestra el estado y onChangeText lo actualiza
+          con cada letra. secureTextEntry oculta la contraseña con puntos. */}
       <Text style={estilos.etiqueta}>CORREO</Text>
       <TextInput
         style={estilos.campo}
@@ -73,6 +87,8 @@ export default function Login() {
         <Ionicons name="lock-closed-outline" size={20} color={COLORES.texto} />
       </View>
 
+      {/* Pressable = elemento que se puede tocar. Al bajar el dedo (pressed)
+          se pone un poco transparente como respuesta visual. */}
       <Pressable
         onPress={alIniciarSesion}
         style={({ pressed }) => [estilos.boton, pressed && { opacity: 0.85 }]}
@@ -80,6 +96,7 @@ export default function Login() {
         <Text style={estilos.botonTexto}>INICIAR SESIÓN</Text>
       </Pressable>
 
+      {/* Link navega a /registro (archivo src/app/registro.js) */}
       <Text style={estilos.registro}>
         ¿No tenés cuenta?{' '}
         <Link href="/registro" style={estilos.registroEnlace}>
@@ -90,6 +107,8 @@ export default function Login() {
   );
 }
 
+// Estilos de la pantalla. StyleSheet.create los organiza y valida.
+// Los colores salen de config.js para que toda la app use la misma paleta.
 const estilos = StyleSheet.create({
   contenedor: { padding: 24, paddingTop: 32 },
   titulo: { fontSize: 30, fontWeight: 'bold', color: COLORES.texto },
