@@ -216,6 +216,8 @@ END $$
 --   '[{"producto_id": 1, "cantidad": 2}, {"producto_id": 5, "cantidad": 1}]'
 -- El precio se toma de la tabla producto (no de la app) y se guarda como
 -- precio_unitario. Todo va en una TRANSACCIÓN: si algo falla, no se guarda nada.
+-- p_nota: la nota del pedido NO se usa en la versión actual (HU v2.4); la app
+-- enviará NULL. El parámetro queda para una versión futura.
 DROP PROCEDURE IF EXISTS sp_CrearPedido $$
 CREATE PROCEDURE sp_CrearPedido(
   IN p_usuario_id       INT UNSIGNED,

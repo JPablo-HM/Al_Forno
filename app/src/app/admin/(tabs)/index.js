@@ -9,7 +9,7 @@
 // pantalla y los botones para seguir el flujo del mapa de navegación.
 // CUANDO SE CONSTRUYA: lista de pedidos activos (Recibido, En preparación,
 // Listo) del más antiguo al más reciente, con cliente, teléfono,
-// productos, nota y total.
+// productos y total.
 // =====================================================================
 import PantallaPendiente from '../../../components/PantallaPendiente';
 import Boton from '../../../components/Boton';
@@ -19,7 +19,7 @@ export default function PedidosEntrantes() {
     <PantallaPendiente
       hu="HU-16"
       titulo="Pedidos entrantes"
-      descripcion="Pedidos activos (Recibido, En preparación, Listo para recoger) del más antiguo al más reciente, con cliente, teléfono, productos, nota, total y hora."
+      descripcion="Pedidos activos (Recibido, En preparación, Listo para recoger) del más antiguo al más reciente, con cliente, teléfono, productos, total y hora."
     >
       <Boton texto="Ver pedido (ejemplo)" href="/admin/pedido/1" />
       <Boton texto="Historial de pedidos" href="/admin/historial-pedidos" variante="secundario" />

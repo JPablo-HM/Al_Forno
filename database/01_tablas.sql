@@ -88,7 +88,7 @@ CREATE TABLE producto (
   -- El orden del ENUM es el orden en que salen las categorías en el menú
   categoria    ENUM('Pizzas', 'Cucina italiana', 'Coctelería', 'Cervezas') NOT NULL,
   precio       INT UNSIGNED NOT NULL,          -- colones enteros
-  agotado      BOOLEAN      NOT NULL DEFAULT FALSE,  -- se ve con la etiqueta "Agotado"
+  agotado      BOOLEAN      NOT NULL DEFAULT FALSE,  -- NO se usa en la versión actual (HU v2.3); queda para una versión futura
   activo       BOOLEAN      NOT NULL DEFAULT TRUE,   -- "eliminar" lo desactiva (no se borra)
 
   PRIMARY KEY (id)
@@ -119,7 +119,7 @@ CREATE TABLE pedido (
   -- El orden del ENUM es el orden obligatorio de los estados
   estado            ENUM('Recibido', 'En preparación', 'Listo para recoger', 'Entregado')
                     NOT NULL DEFAULT 'Recibido',
-  nota              VARCHAR(200) NULL,                      -- ej. "sin cebolla"
+  nota              VARCHAR(200) NULL,                      -- NO se usa en la versión actual (HU v2.4); queda para una versión futura
   total             INT UNSIGNED NOT NULL,                  -- lo que se pagó
   tarjeta_ultimos4  CHAR(4)      NOT NULL,                  -- se muestra en el comprobante
   fecha             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

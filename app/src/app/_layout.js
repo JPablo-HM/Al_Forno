@@ -17,16 +17,20 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SesionProvider, useSesion } from '../context/SesionContext';
+import { CarritoProvider } from '../context/CarritoContext';
 import { COLORES } from '../config/config';
 
 // RootLayout es lo primero que se dibuja. Envuelve toda la app con
-// SesionProvider para que cualquier pantalla pueda usar useSesion().
+// SesionProvider (useSesion) y CarritoProvider (useCarrito). El carrito va
+// DENTRO de la sesión porque la usa: al cerrar sesión se vacía.
 export default function RootLayout() {
   return (
     <SesionProvider>
-      <Navegacion />
-      {/* Barra de estado del teléfono (hora, batería) con letras claras */}
-      <StatusBar style="light" />
+      <CarritoProvider>
+        <Navegacion />
+        {/* Barra de estado del teléfono (hora, batería) con letras claras */}
+        <StatusBar style="light" />
+      </CarritoProvider>
     </SesionProvider>
   );
 }

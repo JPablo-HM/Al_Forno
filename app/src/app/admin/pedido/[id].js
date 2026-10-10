@@ -7,8 +7,8 @@
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
-// CUANDO SE CONSTRUYA: productos, nota y datos del cliente, con un botón
-// para avanzar el estado en orden. La base no permite saltarse estados.
+// CUANDO SE CONSTRUYA: productos y datos del cliente, con un botón
+// para avanzar el estado en orden. La API no permite saltarse estados.
 // =====================================================================
 import { useLocalSearchParams } from 'expo-router';
 import PantallaPendiente from '../../../components/PantallaPendiente';
@@ -21,7 +21,7 @@ export default function DetallePedidoAdmin() {
     <PantallaPendiente
       hu="HU-16"
       titulo={`Detalle del pedido · ${id}`}
-      descripcion="Productos, nota, cliente y botón para avanzar el estado en orden: Recibido → En preparación → Listo para recoger → Entregado."
+      descripcion="Productos, cliente y botón para avanzar el estado en orden: Recibido → En preparación → Listo para recoger → Entregado."
     />
   );
 }

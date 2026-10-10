@@ -13,9 +13,11 @@ router.get('/salud', saludController.verificar);
 // Módulo Información (Inicio): /api/restaurante, /api/horario, /api/promociones
 router.use(require('./informacion.routes'));
 
+// Módulo Menú: /api/menu
+router.use('/menu', require('./menu.routes'));
+
 // Próximos módulos (se agregan día a día):
 // router.use('/auth', require('./auth.routes'));
-// router.use('/menu', require('./menu.routes'));
 // router.use('/pedidos', require('./pedidos.routes'));
 // router.use('/reservas', require('./reservas.routes'));
 // router.use('/eventos', require('./eventos.routes'));
