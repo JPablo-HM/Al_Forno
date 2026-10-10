@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rutas = require('./routes');
+const rutas = require('./modulos'); // todos los módulos (ver modulos/index.js)
 const { noEncontrado, manejarErrores } = require('./middlewares/errores');
 
 // Crea la aplicación. Los app.use se ejecutan EN ORDEN en cada petición:

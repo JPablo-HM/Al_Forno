@@ -1,8 +1,8 @@
 // CAPA LÓGICA DE NEGOCIO (servicio) del módulo Información (HU-04, 05, 06).
 // Decide qué datos salen hacia la app y en qué formato.
-const informacionRepository = require('../repositories/informacion.repository');
-const { RESTAURANTE, HORARIO } = require('../config/restaurante');
-const { ahora, diaSemanaIso, formatearHora } = require('../utils/tiempo');
+const informacionRepositorio = require('./informacion.repositorio');
+const { RESTAURANTE, HORARIO } = require('../../config/restaurante');
+const { ahora, diaSemanaIso, formatearHora } = require('../../utils/tiempo');
 
 // HU-04 · Horario de la semana (información quemada en config/restaurante.js).
 // Solo se muestra la tabla de los 7 días; no se calcula si está abierto.
@@ -29,7 +29,7 @@ function obtenerRestaurante() {
 // descripción. Si no hay, devuelve [] y la app muestra
 // "No hay promociones por el momento".
 async function listarPromociones() {
-  return informacionRepository.listarPromocionesActivas();
+  return informacionRepositorio.listarPromocionesActivas();
 }
 
 module.exports = { obtenerHorario, obtenerRestaurante, listarPromociones };

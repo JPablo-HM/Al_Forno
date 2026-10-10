@@ -38,7 +38,7 @@ export default function Perfil() {
     <PantallaPendiente hu="HU-02" titulo="Mi perfil" descripcion="Nombre, cédula, teléfono y correo del cliente.">
       <Text style={estilos.nombre}>{usuario.nombre_completo}</Text>
       <Boton texto="Mis pedidos" href="/mis-pedidos" />
-      <Boton texto="Mis reservas" href="/mis-reservas" />
+      <Boton texto="Mis reservas" href="/reservas" />
       <Boton texto="Mis tickets" href="/mis-tickets" />
       <Boton
         texto="Cerrar sesión"

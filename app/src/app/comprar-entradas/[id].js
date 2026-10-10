@@ -2,8 +2,8 @@
 // PANTALLA · Pago de entradas
 // Ruta: /comprar-entradas/[id]   ·   Historia: HU-13
 // Quién la ve: solo clientes con sesión iniciada
-// Se llega desde: Detalle de evento → "Comprar entradas"
-// Lleva a: /mis-tickets/[id]
+// Se llega desde: Agenda → "Comprar entradas" en un evento con cover
+// Lleva a: /mis-tickets
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
@@ -24,7 +24,7 @@ export default function ComprarEntradas() {
       titulo={`Pago de entradas · ${id}`}
       descripcion="Cantidad de 1 a 6 entradas, total (cover × cantidad) y pago con tarjeta simulada."
     >
-      <Boton texto="Pagar (simulado)" href="/mis-tickets/1" />
+      <Boton texto="Pagar (simulado)" href="/mis-tickets" />
     </PantallaPendiente>
   );
 }

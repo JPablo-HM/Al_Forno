@@ -1,6 +1,6 @@
-// CAPA ACCESO A DATOS (repositorio): la única que habla con MySQL.
+// CAPA ACCESO A DATOS (repositorio) del módulo Salud: la única que habla con MySQL.
 // Los demás repositorios llamarán procedimientos almacenados: CALL sp_...
-const pool = require('../config/db');
+const pool = require('../../config/db');
 
 // SELECT 1 es la consulta más simple posible: solo comprueba que MySQL
 // responde. Los próximos repositorios llamarán procedimientos con

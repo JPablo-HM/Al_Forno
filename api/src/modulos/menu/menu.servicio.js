@@ -1,6 +1,6 @@
 // CAPA LÓGICA DE NEGOCIO (servicio) del módulo Menú (HU-03).
 // Decide qué datos salen hacia la app y en qué forma.
-const menuRepository = require('../repositories/menu.repository');
+const menuRepositorio = require('./menu.repositorio');
 
 // HU-03 · Menú agrupado por categoría.
 // La base devuelve una lista plana de productos; aquí se agrupan para que
@@ -9,7 +9,7 @@ const menuRepository = require('../repositories/menu.repository');
 //     { categoria: 'Cucina italiana', productos: [...] }, ... ]
 // Una categoría sin productos activos no aparece.
 async function obtenerMenu() {
-  const productos = await menuRepository.listarMenu();
+  const productos = await menuRepositorio.listarMenu();
 
   const categorias = [];
   for (const p of productos) {

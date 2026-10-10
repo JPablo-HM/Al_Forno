@@ -1,6 +1,6 @@
 // CAPA ACCESO A DATOS (repositorio) del módulo Menú (HU-03).
 // Es la única capa que habla con MySQL: solo llama procedimientos almacenados.
-const pool = require('../config/db');
+const pool = require('../../config/db');
 
 // HU-03 · Productos activos → sp_ListarMenu()
 // Vienen ordenados por categoría (en el orden del ENUM: Pizzas, Cucina

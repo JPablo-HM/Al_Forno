@@ -57,7 +57,6 @@ function Navegacion() {
       {/* Visitantes y clientes (acceso libre) */}
       <Stack.Protected guard={!esAdmin}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="eventos/[id]" options={{ title: 'Evento especial' }} />
       </Stack.Protected>
 
       {/* Solo sin sesión */}
@@ -71,16 +70,11 @@ function Navegacion() {
         <Stack.Screen name="carrito" options={{ title: 'Carrito' }} />
         <Stack.Screen name="resumen-pedido" options={{ title: 'Resumen del pedido' }} />
         <Stack.Screen name="pago" options={{ title: 'Pago' }} />
-        {/* headerBackVisible: false → sin flecha "atrás", para no volver a la pantalla de pago */}
-        <Stack.Screen name="comprobante/[id]" options={{ title: 'Comprobante', headerBackVisible: false }} />
         <Stack.Screen name="mis-pedidos/index" options={{ title: 'Mis pedidos' }} />
-        <Stack.Screen name="mis-pedidos/[id]" options={{ title: 'Estado del pedido' }} />
+        <Stack.Screen name="mis-pedidos/[id]" options={{ title: 'Pedido' }} />
         <Stack.Screen name="nueva-reserva" options={{ title: 'Nueva reserva' }} />
-        <Stack.Screen name="reserva-confirmada/[id]" options={{ title: 'Reserva confirmada', headerBackVisible: false }} />
-        <Stack.Screen name="mis-reservas" options={{ title: 'Mis reservas' }} />
         <Stack.Screen name="comprar-entradas/[id]" options={{ title: 'Pago de entradas' }} />
         <Stack.Screen name="mis-tickets/index" options={{ title: 'Mis tickets' }} />
-        <Stack.Screen name="mis-tickets/[id]" options={{ title: 'Mi ticket' }} />
       </Stack.Protected>
 
       {/* Solo administrador */}

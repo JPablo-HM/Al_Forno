@@ -1,15 +1,16 @@
 // =====================================================================
-// PANTALLA · Estado del pedido
-// Ruta: /mis-pedidos/[id]   ·   Historia: HU-09
+// PANTALLA · Pedido: estado, detalle y comprobante
+// Ruta: /mis-pedidos/[id]   ·   Historia: HU-08, HU-09
 // Quién la ve: solo clientes con sesión iniciada
-// Se llega desde: Mis pedidos o el comprobante
+// Se llega desde: Mis pedidos, o desde Pago al aprobarse el pago
 // Lleva a: — 
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
 // CUANDO SE CONSTRUYA: mostrará el estado (Recibido → En preparación →
-// Listo para recoger → Entregado), los productos y el comprobante. Se
-// actualizará al refrescar.
+// Listo para recoger → Entregado) y el comprobante en la misma pantalla:
+// número de pedido, fecha y hora, productos, total y últimos 4 dígitos de
+// la tarjeta (HU-08: no es factura electrónica). Se actualiza al refrescar.
 // =====================================================================
 import { useLocalSearchParams } from 'expo-router';
 import PantallaPendiente from '../../components/PantallaPendiente';
@@ -21,8 +22,8 @@ export default function EstadoPedido() {
   return (
     <PantallaPendiente
       hu="HU-09"
-      titulo={`Estado del pedido · ${id}`}
-      descripcion="Estado (Recibido, En preparación, Listo para recoger, Entregado), detalle y comprobante del pedido."
+      titulo={`Pedido #${id}`}
+      descripcion="Estado (Recibido, En preparación, Listo para recoger, Entregado) y comprobante: número, fecha y hora, productos, total y últimos 4 dígitos de la tarjeta."
     />
   );
 }

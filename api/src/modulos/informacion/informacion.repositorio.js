@@ -4,7 +4,7 @@
 // El horario (HU-04) y la ubicación (HU-05) NO pasan por aquí: no están en
 // la base de datos, sino en config/restaurante.js. Solo las promociones
 // se guardan en MySQL.
-const pool = require('../config/db');
+const pool = require('../../config/db');
 
 // Cuando se ejecuta un CALL, mysql2 devuelve una lista de "resultados":
 //   resultados[0] → las filas del SELECT del procedimiento
