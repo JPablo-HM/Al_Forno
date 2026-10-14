@@ -2,21 +2,17 @@
 // Decide qué datos salen hacia la app y en qué formato.
 const informacionRepositorio = require('./informacion.repositorio');
 const { RESTAURANTE, HORARIO } = require('../../config/restaurante');
-const { ahora, diaSemanaIso, formatearHora } = require('../../utils/tiempo');
+const { formatearHora } = require('../../utils/tiempo');
 
 // HU-04 · Horario de la semana (información quemada en config/restaurante.js).
 // Solo se muestra la tabla de los 7 días; no se calcula si está abierto.
-// Devuelve [{ id, dia, horas, esHoy }]. esHoy solo sirve para resaltar el
-// día actual en la app.
+// Devuelve [{ id, dia, horas }].
 function obtenerHorario() {
-  const hoy = diaSemanaIso(ahora());
-
   return HORARIO.map((d) => ({
     id: d.id,
     dia: d.dia,
     // '17:00' y '23:00' → '5:00 p.m. – 11:00 p.m.'
     horas: d.abierto ? `${formatearHora(d.apertura)} – ${formatearHora(d.cierre)}` : 'Cerrado',
-    esHoy: d.id === hoy,
   }));
 }
 

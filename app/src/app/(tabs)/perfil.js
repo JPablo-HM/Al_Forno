@@ -2,8 +2,9 @@
 // PANTALLA · Perfil (pestaña del cliente)    Ruta: /perfil   ·   HU-01, HU-02
 // Quién la ve: visitantes y clientes. Tiene DOS versiones según la sesión:
 //   · Sin sesión: botones "Iniciar sesión" y "Crear cuenta".
-//   · Con sesión de cliente: nombre, accesos a Mis pedidos / Mis reservas /
-//     Mis tickets y "Cerrar sesión".
+//   · Con sesión de cliente: nombre, accesos a Mis pedidos / Mis reservas
+//     y "Cerrar sesión". ("Mis tickets" se quitó: por ahora la agenda es
+//     solo informativa y no se compran entradas.)
 // CUANDO SE CONSTRUYA: mostrará cédula, teléfono y correo (GET /api/auth/perfil)
 // como en el mockup HU-02.
 // =====================================================================
@@ -25,7 +26,7 @@ export default function Perfil() {
       <PantallaPendiente
         hu="HU-01 · HU-02"
         titulo="Perfil"
-        descripcion="Inicia sesión para hacer pedidos, reservar y comprar entradas."
+        descripcion="Inicia sesión para hacer pedidos y reservar."
       >
         <Boton texto="Iniciar sesión" href="/login" />
         <Boton texto="Crear cuenta" href="/registro" variante="secundario" />
@@ -39,7 +40,6 @@ export default function Perfil() {
       <Text style={estilos.nombre}>{usuario.nombre_completo}</Text>
       <Boton texto="Mis pedidos" href="/mis-pedidos" />
       <Boton texto="Mis reservas" href="/reservas" />
-      <Boton texto="Mis tickets" href="/mis-tickets" />
       <Boton
         texto="Cerrar sesión"
         variante="secundario"

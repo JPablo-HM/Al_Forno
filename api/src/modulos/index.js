@@ -20,10 +20,12 @@ router.use(require('./informacion/informacion.rutas'));
 // Módulo Menú: GET /api/menu
 router.use('/menu', require('./menu/menu.rutas'));
 
+// Módulo Agenda: GET /api/agenda (información quemada en config/agenda.js)
+router.use('/agenda', require('./agenda/agenda.rutas'));
+
 // Próximos módulos (se agregan igual, cada uno en su carpeta):
 // router.use('/auth', require('./auth/auth.rutas'));
 // router.use('/pedidos', require('./pedidos/pedidos.rutas'));
 // router.use('/reservas', require('./reservas/reservas.rutas'));
-// router.use('/agenda', require('./agenda/agenda.rutas'));
 
 module.exports = router;

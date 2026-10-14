@@ -1,5 +1,7 @@
 // Menú inferior del panel de administración (HU-14).
-// Pedidos · Reservas · Menú · Agenda · Más
+// Menú · Agenda · Promociones · Más
+// El administrador solo gestiona el menú, la agenda y las promociones
+// (Pedidos y Reservas se quitaron del panel).
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORES } from '../../../config/config';
@@ -14,7 +16,7 @@ function icono(nombre) {
 export default function TabsAdmin() {
   return (
     // Tabs = menú inferior. Cada Tabs.Screen apunta a un archivo de esta carpeta:
-    // name="index" → index.js, name="menu" → menu.js, etc.
+    // name="index" → index.js (Menú), name="agenda" → agenda.js, etc.
     // title es el texto de la pestaña; headerTitle, el de la barra superior.
     <Tabs
       screenOptions={{
@@ -26,10 +28,9 @@ export default function TabsAdmin() {
         tabBarStyle: { backgroundColor: COLORES.cremaClara },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Pedidos', headerTitle: 'Pedidos entrantes', tabBarIcon: icono('receipt-outline') }} />
-      <Tabs.Screen name="reservas" options={{ title: 'Reservas', headerTitle: 'Reservas del día', tabBarIcon: icono('calendar-outline') }} />
-      <Tabs.Screen name="menu" options={{ title: 'Menú', headerTitle: 'Productos', tabBarIcon: icono('pizza-outline') }} />
+      <Tabs.Screen name="index" options={{ title: 'Menú', headerTitle: 'Productos', tabBarIcon: icono('pizza-outline') }} />
       <Tabs.Screen name="agenda" options={{ title: 'Agenda', headerTitle: 'Agenda', tabBarIcon: icono('musical-notes-outline') }} />
+      <Tabs.Screen name="promociones" options={{ title: 'Promociones', headerTitle: 'Promociones', tabBarIcon: icono('pricetag-outline') }} />
       <Tabs.Screen name="mas" options={{ title: 'Más', tabBarIcon: icono('ellipsis-horizontal') }} />
     </Tabs>
   );

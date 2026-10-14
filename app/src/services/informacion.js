@@ -3,7 +3,7 @@
 import { pedir } from './api';
 
 // HU-04 · Horario → GET /api/horario
-// Devuelve [{ id, dia, horas, esHoy }] (los 7 días)
+// Devuelve [{ id, dia, horas }] (los 7 días)
 export const obtenerHorario = () => pedir('/horario');
 
 // HU-05 · Ubicación y contacto → GET /api/restaurante

@@ -2,7 +2,7 @@
 // PANTALLA · Promociones (admin)
 // Ruta: /admin/promociones   ·   Historia: HU-17
 // Quién la ve: solo el administrador
-// Se llega desde: Más → "Promociones"
+// Se llega desde: pestaña "Promociones" del panel
 // Lleva a: /admin/promocion/[id]
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
@@ -10,8 +10,8 @@
 // CUANDO SE CONSTRUYA: todas las promociones y si están activas. Una
 // promoción vencida se desactiva a mano.
 // =====================================================================
-import PantallaPendiente from '../../components/PantallaPendiente';
-import Boton from '../../components/Boton';
+import PantallaPendiente from '../../../components/PantallaPendiente';
+import Boton from '../../../components/Boton';
 
 export default function ListaPromociones() {
   return (

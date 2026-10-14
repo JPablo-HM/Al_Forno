@@ -1,28 +1,27 @@
 // =====================================================================
-// PANTALLA · Pedidos entrantes (admin)
-// Ruta: /admin   ·   Historia: HU-16
+// PANTALLA · Lista de productos (admin)
+// Ruta: /admin   ·   Historia: HU-15
 // Quién la ve: solo el administrador
-// Se llega desde: es la primera pantalla del administrador al iniciar sesión; pestaña "Pedidos"
-// Lleva a: /admin/pedido/[id] y /admin/historial-pedidos
+// Se llega desde: es la primera pantalla del administrador al iniciar sesión; pestaña "Menú"
+// Lleva a: /admin/producto/nuevo (crear) y /admin/producto/[id] (editar)
 //
 // ESTADO: plantilla temporal. <PantallaPendiente> muestra qué hará la
 // pantalla y los botones para seguir el flujo del mapa de navegación.
-// CUANDO SE CONSTRUYA: lista de pedidos activos (Recibido, En preparación,
-// Listo) del más antiguo al más reciente, con cliente, teléfono,
-// productos y total.
+// CUANDO SE CONSTRUYA: productos por categoría con opciones para crear,
+// editar y eliminar (borrado lógico: se desactiva, no se borra).
 // =====================================================================
 import PantallaPendiente from '../../../components/PantallaPendiente';
 import Boton from '../../../components/Boton';
 
-export default function PedidosEntrantes() {
+export default function ListaProductos() {
   return (
     <PantallaPendiente
-      hu="HU-16"
-      titulo="Pedidos entrantes"
-      descripcion="Pedidos activos (Recibido, En preparación, Listo para recoger) del más antiguo al más reciente, con cliente, teléfono, productos, total y hora."
+      hu="HU-15"
+      titulo="Lista de productos"
+      descripcion="Productos por categoría. Permite crear, editar y eliminar (desactivar)."
     >
-      <Boton texto="Ver pedido (ejemplo)" href="/admin/pedido/1" />
-      <Boton texto="Historial de pedidos" href="/admin/historial-pedidos" variante="secundario" />
+      <Boton texto="Nuevo producto" href="/admin/producto/nuevo" />
+      <Boton texto="Editar producto (ejemplo)" href="/admin/producto/1" variante="secundario" />
     </PantallaPendiente>
   );
 }

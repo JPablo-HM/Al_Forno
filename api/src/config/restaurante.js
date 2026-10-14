@@ -14,8 +14,8 @@
 const RESTAURANTE = {
   nombre: 'AL FORNO',
   direccion: 'Cartago, Costa Rica',
-  senas: 'Señas pendientes: completar con la dirección exacta del local.',
-  telefono: '00000000', // 8 dígitos, sin guion
+  senas: 'Cartago, Los Angeles',
+  telefono: '72066114', // 8 dígitos, sin guion
 };
 
 // HU-04 · Horario de atención (Reglas generales de las historias de usuario)

@@ -30,23 +30,32 @@ INSERT INTO usuario (rol, nombre_completo, correo, contrasena_hash) VALUES
    '$2b$10$6Iv2bRlSnRthvQJ92ioUz.s6t5YtyU1zH9hqd/Kn1LHbkDIRwfBbG');
 
 -- ---------------------------------------------------------------------
--- 2. Productos del menú (HU-03), tomados de la carta del sitio web
+-- 2. Productos del menú (HU-03) · 5 por categoría
+--    Actualizado el 13 de octubre de 2026 (carta nueva).
+--    Precios en colones enteros. En el menú salen por categoría y, dentro
+--    de cada una, en orden alfabético (ver sp_ListarMenu).
 -- ---------------------------------------------------------------------
 INSERT INTO producto (categoria, nombre, descripcion, precio) VALUES
-  ('Pizzas',          'Margherita',          'Salsa de tomate, mozzarella fresca, albahaca y aceite de oliva.',          6500),
-  ('Pizzas',          'Diavola',             'Tomate, mozzarella, salami picante y hojuelas de chile.',                  7800),
-  ('Pizzas',          'Quattro Formaggi',    'Mozzarella, gorgonzola, parmesano y provolone.',                           8200),
-  ('Pizzas',          'Al Forno de la casa', 'Prosciutto, rúgula, tomate cherry, parmesano y reducción de balsámico.',   8900),
-  ('Cucina italiana', 'Lasagna della Nonna', 'Capas de pasta, ragú de res, bechamel y parmesano gratinado.',             7500),
-  ('Cucina italiana', 'Spaghetti Carbonara', 'Guanciale, yema de huevo, pecorino y pimienta negra.',                     6900),
-  ('Cucina italiana', 'Bruschettas',         'Pan tostado con tomate, ajo, albahaca y aceite de oliva.',                 4200),
-  ('Cucina italiana', 'Tiramisú',            'Postre clásico con café espresso, mascarpone y cacao.',                    3800),
-  ('Coctelería',      'Negroni',             'Gin, Campari y vermú rosso.',                                              5200),
-  ('Coctelería',      'Aperol Spritz',       'Aperol, prosecco y un toque de soda con naranja.',                         4800),
-  ('Coctelería',      'Limoncello Sour',     'Limoncello, limón fresco y espuma cítrica.',                               5000),
-  ('Cervezas',        'Lager nacional',      'Refrescante y ligera, ideal con cualquier pizza.',                         2200),
-  ('Cervezas',        'IPA artesanal',       'Lúpulo intenso con notas cítricas.',                                       3500),
-  ('Cervezas',        'Peroni',              'La clásica lager italiana, importada.',                                    3200);
+  ('Pizzas',          'Pizza Margherita',                'Salsa de tomate, mozzarella fresca, albahaca y aceite de oliva.', 6500),
+  ('Pizzas',          'Pizza Pepperoni',                 'Salsa de tomate, mozzarella y pepperoni.', 7200),
+  ('Pizzas',          'Pizza Cuatro Quesos',             'Mozzarella, gorgonzola, parmesano y fontina.', 8200),
+  ('Pizzas',          'Pizza Prosciutto e Funghi',       'Jamón italiano, champiñones, mozzarella y salsa de tomate.', 8500),
+  ('Pizzas',          'Pizza Hawaiana',                  'Jamón, piña, mozzarella y salsa de tomate.', 7200),
+  ('Cucina italiana', 'Spaghetti alla Carbonara',        'Pasta con huevo, pecorino, guanciale y pimienta negra.', 6900),
+  ('Cucina italiana', 'Lasagna alla Bolognese',          'Capas de pasta, ragú de carne, bechamel y queso.', 7500),
+  ('Cucina italiana', 'Fettuccine Alfredo',              'Pasta con salsa cremosa de mantequilla y parmesano.', 6800),
+  ('Cucina italiana', 'Ravioli Ricotta e Spinaci',       'Ravioles rellenos de ricotta y espinaca con salsa de tomate o mantequilla.', 7200),
+  ('Cucina italiana', 'Risotto ai Funghi',               'Arroz cremoso italiano con champiñones, parmesano y vino blanco.', 7800),
+  ('Coctelería',      'Aperol Spritz',                   'Aperol, prosecco, soda y rodaja de naranja.', 4800),
+  ('Coctelería',      'Negroni',                         'Gin, Campari y vermut rojo.', 5200),
+  ('Coctelería',      'Limoncello Spritz',               'Limoncello, prosecco, soda y limón.', 5000),
+  ('Coctelería',      'Martini',                         'Gin y vermut seco, con aceituna o twist de limón.', 5200),
+  ('Coctelería',      'Bellini',                         'Prosecco y puré de melocotón.', 4800),
+  ('Cervezas',        'Imperial Lager',                  'La clásica de Costa Rica. Cerveza rubia, ligera y refrescante.', 1800),
+  ('Cervezas',        'Pilsen',                          'Tradicional costarricense. Sabor más intenso y amargor característico.', 1800),
+  ('Cervezas',        'Bavaria Gold',                    'Opción premium. Lager suave, ideal para acompañar pizzas y pastas.', 2200),
+  ('Cervezas',        'Bavaria Dark',                    'Cerveza oscura. Notas tostadas y maltosas para quienes prefieren sabores más intensos.', 2200),
+  ('Cervezas',        'Cerveza artesanal costarricense', 'Una opción local diferente. Puedes elegir una IPA o una Pale Ale de una cervecería artesanal nacional, según disponibilidad.', 3500);
 
 -- ---------------------------------------------------------------------
 -- 3. Agenda (HU-12), tomada del sitio web

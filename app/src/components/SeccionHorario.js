@@ -3,8 +3,8 @@
 // Historia: HU-04
 // Datos: GET /api/horario (services/informacion.js)
 //
-// Muestra el horario de los 7 días (información fija de la API),
-// resaltando el día de hoy. No calcula si el local está abierto:
+// Muestra el horario de los 7 días (información fija de la API).
+// No resalta el día de hoy. No calcula si el local está abierto:
 // la API ya envía las horas escritas y esta sección solo las dibuja.
 // =====================================================================
 import { useEffect, useState } from 'react';
@@ -35,13 +35,9 @@ export default function SeccionHorario() {
   } else {
     // Los 7 días. map() dibuja una fila por cada día; key identifica cada fila
     contenido = dias.map((d) => (
-      <View key={d.id} style={[estilos.fila, d.esHoy && estilos.filaHoy]}>
-        <Text style={[estilos.dia, d.esHoy && estilos.textoHoy]}>
-          {d.esHoy ? `${d.dia} · hoy` : d.dia}
-        </Text>
-        <Text style={[estilos.horas, d.horas === 'Cerrado' && estilos.cerrado, d.esHoy && estilos.textoHoy]}>
-          {d.horas}
-        </Text>
+      <View key={d.id} style={estilos.fila}>
+        <Text style={estilos.dia}>{d.dia}</Text>
+        <Text style={[estilos.horas, d.horas === 'Cerrado' && estilos.cerrado]}>{d.horas}</Text>
       </View>
     ));
   }
@@ -58,10 +54,8 @@ const estilos = StyleSheet.create({
   tarjeta: { backgroundColor: COLORES.cremaClara, borderRadius: 8, padding: 16, marginBottom: 16 },
   titulo: { color: COLORES.terracota, fontWeight: 'bold', letterSpacing: 2, marginBottom: 12 },
   fila: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: COLORES.crema },
-  filaHoy: { backgroundColor: COLORES.negro, borderRadius: 6, borderBottomWidth: 0 },
   dia: { color: COLORES.texto },
   horas: { color: COLORES.texto },
   cerrado: { color: COLORES.textoSuave },
-  textoHoy: { color: COLORES.crema, fontWeight: 'bold' },
   error: { color: COLORES.terracotaOscuro },
 });
