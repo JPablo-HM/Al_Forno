@@ -2,8 +2,12 @@
 // La navegación (src/app/_layout.js) decide qué pantallas mostrar según
 // este estado: visitante, CLIENTE o ADMIN.
 //
-// PENDIENTE (HU-02): cuando exista el login real con la API, guardar el
-// token con expo-secure-store para que la sesión se mantenga al cerrar la app.
+// La sesión vive solo en memoria: al cerrar la app se pierde y hay que
+// iniciar sesión de nuevo (decisión del proyecto).
+//
+// token: lo entrega la API al iniciar sesión o registrarse. Las pantallas
+// que piden datos del usuario (perfil, pedidos, reservas) lo mandan a la
+// API con pedir(ruta, { token }).
 import { createContext, useContext, useMemo, useState } from 'react';
 
 // createContext crea un "canal" para compartir datos con toda la app sin
@@ -15,6 +19,7 @@ const SesionContext = createContext(null);
 export function SesionProvider({ children }) {
   // null = visitante sin sesión
   // { id, nombre_completo, correo, rol: 'CLIENTE' | 'ADMIN' } = sesión iniciada
+  // (lo que devuelve la API en POST /api/auth/login o /registro)
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(null);
 

@@ -3,8 +3,7 @@
 // Ruta: /resumen-pedido   ·   Historia: HU-07
 // Quién la ve: solo clientes con sesión iniciada
 // Se llega desde: Carrito → "Continuar"
-// Lleva a: /pago ("Confirmar y pagar"; la pantalla Pago es plantilla en
-//          esta entrega)
+// Lleva a: /pago ("Confirmar y pagar")
 //
 // Muestra el pedido completo antes de pagar: que es para llevar, los
 // productos con cantidad y subtotal, el total y el nombre del cliente.

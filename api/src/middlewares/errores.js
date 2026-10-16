@@ -13,15 +13,17 @@ function manejarErrores(err, req, res, next) {
   // Llegan con SQLSTATE '45000' y un código 5400, 5403, 5404 o 5409:
   // ese código menos 5000 es el estado HTTP (400, 403, 404 o 409) y el
   // mensaje ya viene escrito para mostrarlo al usuario.
-  // Ejemplos: "Evento agotado" (409), "El pedido no existe" (404).
+  // Ejemplos: "Ese correo ya está registrado" (409), "El pedido no existe" (404).
   if (err.sqlState === '45000' && err.errno >= 5400 && err.errno <= 5499) {
     return res.status(err.errno - 5000).json({ mensaje: err.sqlMessage });
   }
 
-  // Cualquier otro error: se registra en la consola y el cliente recibe
-  // un mensaje general, sin detalles internos.
-  console.error(err);
+  // Errores previstos por la API (ej. 401 "Correo o contraseña incorrectos"):
+  // traen err.status y su mensaje se muestra tal cual.
+  // Cualquier otro error es inesperado: se registra en la consola y el
+  // cliente recibe un mensaje general, sin detalles internos.
   const status = err.status || 500;
+  if (status === 500) console.error(err);
   res.status(status).json({
     mensaje: status === 500 ? 'Error interno del servidor' : err.message,
   });

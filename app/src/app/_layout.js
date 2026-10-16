@@ -5,7 +5,7 @@
 // (mapa de navegación y HU-14):
 //   · Visitantes y clientes: menú inferior (Inicio, Menú, Agenda, Reservas, Perfil).
 //   · Solo sin sesión: Iniciar sesión y Registro.
-//   · Solo clientes: carrito, pago, mis pedidos, reservas y tickets.
+//   · Solo clientes: carrito, pago, mis pedidos y nueva reserva.
 //   · Solo administrador: el panel /admin. El administrador no ve la app de clientes.
 //
 // Cuando la sesión cambia y la pantalla actual deja de estar permitida,
@@ -73,8 +73,6 @@ function Navegacion() {
         <Stack.Screen name="mis-pedidos/index" options={{ title: 'Mis pedidos' }} />
         <Stack.Screen name="mis-pedidos/[id]" options={{ title: 'Pedido' }} />
         <Stack.Screen name="nueva-reserva" options={{ title: 'Nueva reserva' }} />
-        <Stack.Screen name="comprar-entradas/[id]" options={{ title: 'Pago de entradas' }} />
-        <Stack.Screen name="mis-tickets/index" options={{ title: 'Mis tickets' }} />
       </Stack.Protected>
 
       {/* Solo administrador */}

@@ -31,4 +31,21 @@ function formatearHora(hora) {
   return `${hora12}:${minutos} ${sufijo}`;
 }
 
-module.exports = { ahora, ZONA, diaSemanaIso, formatearHora };
+// Segundos que han pasado desde una fecha guardada en MySQL.
+// La fecha llega como texto en hora de Costa Rica ('2026-10-15 20:30:05').
+// dayjs.tz(texto, ZONA) la interpreta en esa zona antes de comparar.
+function segundosDesde(fechaTexto) {
+  return ahora().diff(dayjs.tz(fechaTexto, ZONA), 'second');
+}
+
+const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// '2026-10-17' → 'Sábado 17 de octubre'
+function formatearFechaLarga(fechaTexto) {
+  const f = dayjs.tz(fechaTexto, ZONA);
+  return `${DIAS[f.day()]} ${f.date()} de ${MESES[f.month()]}`;
+}
+
+module.exports = { ahora, ZONA, diaSemanaIso, formatearHora, segundosDesde, formatearFechaLarga };

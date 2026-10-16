@@ -1,40 +1,18 @@
-// Autenticación TEMPORAL (cascarón).
-// Dos usuarios quemados para probar la app como cliente y como administrador.
-// No usa la API, ni la base de datos, ni cifra contraseñas.
-//
-// Cuando exista POST /api/auth/login, solo se cambia esta función:
-// la pantalla de login no necesita cambios.
+// Servicios del módulo Cuenta (HU-01, HU-02, HU-14).
+// Cada función llama a pedir() de api.js con su ruta de la API.
+// La contraseña se cifra en la API (bcrypt); la app nunca la guarda.
+import { pedir } from './api';
 
-// Lista fija de usuarios. Tienen los mismos campos que devolverá la API
-// (id, nombre_completo, correo, rol) para que el cambio sea transparente.
-const USUARIOS_PRUEBA = [
-  {
-    id: 1,
-    nombre_completo: 'Administrador AL FORNO',
-    correo: 'admin.alforno',
-    contrasena: 'admin123',
-    rol: 'ADMIN',
-  },
-  {
-    id: 2,
-    nombre_completo: 'Jose Hernández',
-    correo: 'cliente.alforno',
-    contrasena: 'cliente123',
-    rol: 'CLIENTE',
-  },
-];
+// HU-01 · Crear cuenta → POST /api/auth/registro
+// datos = { nombre_completo, cedula, telefono, correo, contrasena }
+// Devuelve { usuario, token }: el cliente queda con la sesión iniciada.
+export const registrar = (datos) => pedir('/auth/registro', { metodo: 'POST', cuerpo: datos });
 
-// Devuelve el usuario (sin la contraseña) o null si los datos no coinciden.
-export function login(correo, contrasena) {
-  // find recorre la lista y devuelve el primer usuario que cumpla la condición
-  // (o undefined). trim() quita espacios y toLowerCase() pasa a minúsculas.
-  const encontrado = USUARIOS_PRUEBA.find(
-    (u) => u.correo === correo.trim().toLowerCase() && u.contrasena === contrasena
-  );
-  if (!encontrado) return null;
+// HU-02 / HU-14 · Iniciar sesión → POST /api/auth/login
+// Devuelve { usuario: { id, rol, nombre_completo, correo }, token }
+export const login = (correo, contrasena) =>
+  pedir('/auth/login', { metodo: 'POST', cuerpo: { correo, contrasena } });
 
-  // Desestructuración: separa la contraseña (en _, se descarta) y copia el
-  // resto en usuario. Así la contraseña nunca sale de este archivo.
-  const { contrasena: _, ...usuario } = encontrado;
-  return usuario;
-}
+// HU-02 · Perfil completo → GET /api/auth/perfil (pide el token)
+// Devuelve { id, rol, nombre_completo, cedula, telefono, correo }
+export const obtenerPerfil = (token) => pedir('/auth/perfil', { token });

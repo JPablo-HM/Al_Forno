@@ -17,15 +17,20 @@ router.use(require('./salud/salud.rutas'));
 // Módulo Información (pantalla Inicio): GET /api/horario, /api/restaurante, /api/promociones
 router.use(require('./informacion/informacion.rutas'));
 
+// Módulo Cuenta: POST /api/auth/registro, POST /api/auth/login, GET /api/auth/perfil
+router.use('/auth', require('./auth/auth.rutas'));
+
 // Módulo Menú: GET /api/menu
 router.use('/menu', require('./menu/menu.rutas'));
 
 // Módulo Agenda: GET /api/agenda (información quemada en config/agenda.js)
 router.use('/agenda', require('./agenda/agenda.rutas'));
 
-// Próximos módulos (se agregan igual, cada uno en su carpeta):
-// router.use('/auth', require('./auth/auth.rutas'));
-// router.use('/pedidos', require('./pedidos/pedidos.rutas'));
-// router.use('/reservas', require('./reservas/reservas.rutas'));
+// Módulo Pedidos (solo clientes con sesión): POST /api/pedidos, GET /api/pedidos, GET /api/pedidos/:id
+router.use('/pedidos', require('./pedidos/pedidos.rutas'));
+
+// Módulo Reservas (solo clientes con sesión): GET /api/reservas/horas, POST /api/reservas,
+// GET /api/reservas, PATCH /api/reservas/:id/cancelar
+router.use('/reservas', require('./reservas/reservas.rutas'));
 
 module.exports = router;
