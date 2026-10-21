@@ -20,8 +20,7 @@ async function obtenerMenu() {
       ultima = { categoria: p.categoria, productos: [] };
       categorias.push(ultima);
     }
-    // Solo los datos que muestra la pantalla. (La columna "agotado" existe
-    // en la base, pero en esta versión no se usa.)
+    // Solo los datos que muestra la pantalla.
     ultima.productos.push({
       id: p.id,
       nombre: p.nombre,

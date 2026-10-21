@@ -70,7 +70,7 @@ INSERT INTO agenda (nombre, descripcion, precio_entrada) VALUES
   ('DJ Set',            'Sábado 10:00 p.m. Vinilos y buena música para cerrar la semana.',                       NULL),
   ('Arte y pizza',      'Domingo 4:00 p.m. Exposiciones de arte y talleres para toda la familia.',               NULL);
 
--- Ejemplo de evento con cover (se compran tickets). Se puede editar o
+-- Ejemplo de evento con cover (se paga en el restaurante). Se puede editar o
 -- desactivar desde el panel del administrador.
 INSERT INTO agenda (nombre, descripcion, precio_entrada) VALUES
   ('Noche de ópera italiana',

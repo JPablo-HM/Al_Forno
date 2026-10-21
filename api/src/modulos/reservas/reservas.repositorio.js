@@ -11,12 +11,11 @@ async function listarOcupacion(fecha) {
 }
 
 // ★ HU-10 · Crea la reserva → sp_CrearReserva (con CANDADO GET_LOCK).
-// motivo: siempre 'Reserva de mesa' · comentario: siempre NULL (no se usan en esta versión).
 // La base revisa las reglas que dependen de otras reservas:
 // máximo 3 por hora y 1 por día por cliente (error 409 si no se cumple).
-async function crearReserva(usuarioId, { fecha, hora, personas, motivo, comentario }) {
-  const [resultados] = await pool.query('CALL sp_CrearReserva(?, ?, ?, ?, ?, ?)', [
-    usuarioId, fecha, hora, personas, motivo, comentario,
+async function crearReserva(usuarioId, { fecha, hora, personas }) {
+  const [resultados] = await pool.query('CALL sp_CrearReserva(?, ?, ?, ?)', [
+    usuarioId, fecha, hora, personas,
   ]);
   return resultados[0][0];
 }

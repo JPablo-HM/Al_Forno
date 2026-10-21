@@ -9,10 +9,7 @@
 //   · máximo 3 reservas por hora · 1 reserva por día por cliente
 // La cantidad de personas (1 a 8) la valida la ruta.
 //
-// El MOTIVO y el COMENTARIO se quitaron de la app (decisión del proyecto).
-// Sus columnas quedan en la base sin usarse: el motivo siempre se guarda
-// como MOTIVO_POR_DEFECTO (su valor por defecto en la tabla) y el
-// comentario como NULL.
+// El motivo y el comentario se quitaron de la app y de la base (decisión del proyecto).
 const reservasRepositorio = require('./reservas.repositorio');
 const { ahora, ZONA, formatearHora, formatearFechaLarga } = require('../../utils/tiempo');
 const dayjs = require('dayjs');
@@ -22,7 +19,6 @@ const HORAS_RESERVA = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
   '18:00', '19:00', '20:00', '21:00', '22:00'];
 const MAXIMO_POR_HORA = 3;
 const DIAS_ANTICIPACION = 30;
-const MOTIVO_POR_DEFECTO = 'Reserva de mesa';
 
 function errorCon(status, mensaje) {
   const error = new Error(mensaje);
@@ -83,11 +79,7 @@ async function crearReserva(usuarioId, datos) {
   if (!HORAS_RESERVA.includes(datos.hora)) throw errorCon(400, 'Escoge una de las horas disponibles');
   if (yaPaso(datos.fecha, datos.hora)) throw errorCon(400, 'Esa hora ya pasó. Escoge otra');
 
-  const reserva = await reservasRepositorio.crearReserva(usuarioId, {
-    ...datos,
-    motivo: MOTIVO_POR_DEFECTO,
-    comentario: null,
-  });
+  const reserva = await reservasRepositorio.crearReserva(usuarioId, datos);
   return armarReserva(reserva);
 }
 

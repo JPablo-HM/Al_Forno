@@ -10,8 +10,8 @@
 --  DÓNDE VIVE CADA REGLA (cada regla en un solo lugar)
 --    · API · validación (express-validator): formato de los datos.
 --    · API · middleware: si es cliente o administrador.
---    · API · services: reglas del negocio (horario, fechas, orden de
---      los estados del pedido, solo tickets de eventos con cover...).
+--    · API · services: reglas del negocio (horario, fechas, estado del
+--      pedido calculado por tiempo...).
 --    · Procedimientos (este archivo): leer y guardar datos. Casi todos
 --      son UNA sola consulta. Solo dos tienen más lógica:
 --        ★ sp_CrearPedido  → transacción: el pedido y sus productos se
@@ -146,12 +146,11 @@ END $$
 --  MENÚ  (HU-03, HU-15)
 -- =====================================================================
 
--- HU-03 / HU-15 · Productos activos por categoría. Los agotados sí salen
--- (con agotado = 1) para mostrar la etiqueta. Lo usan el cliente y el admin.
+-- HU-03 / HU-15 · Productos activos por categoría. Lo usan el cliente y el admin.
 DROP PROCEDURE IF EXISTS sp_ListarMenu $$
 CREATE PROCEDURE sp_ListarMenu()
 BEGIN
-  SELECT id, nombre, descripcion, categoria, precio, agotado
+  SELECT id, nombre, descripcion, categoria, precio
     FROM producto
    WHERE activo
    ORDER BY categoria, nombre;   -- categoria sigue el orden del ENUM
@@ -160,7 +159,7 @@ END $$
 DROP PROCEDURE IF EXISTS sp_ObtenerProducto $$
 CREATE PROCEDURE sp_ObtenerProducto(IN p_id INT UNSIGNED)
 BEGIN
-  SELECT id, nombre, descripcion, categoria, precio, agotado
+  SELECT id, nombre, descripcion, categoria, precio
     FROM producto
    WHERE id = p_id AND activo;
 END $$
@@ -187,14 +186,6 @@ BEGIN
   CALL sp_ObtenerProducto(p_id);
 END $$
 
--- HU-15 · Marcar (TRUE) o desmarcar (FALSE) como "Agotado"
-DROP PROCEDURE IF EXISTS sp_CambiarAgotado $$
-CREATE PROCEDURE sp_CambiarAgotado(IN p_id INT UNSIGNED, IN p_agotado BOOLEAN)
-BEGIN
-  UPDATE producto SET agotado = p_agotado WHERE id = p_id AND activo;
-  CALL sp_ObtenerProducto(p_id);
-END $$
-
 -- HU-15 · "Eliminar": se desactiva para no afectar los pedidos que ya lo tienen.
 -- Devuelve eliminado = 1 si lo encontró, 0 si no existía.
 DROP PROCEDURE IF EXISTS sp_EliminarProducto $$
@@ -216,12 +207,9 @@ END $$
 --   '[{"producto_id": 1, "cantidad": 2}, {"producto_id": 5, "cantidad": 1}]'
 -- El precio se toma de la tabla producto (no de la app) y se guarda como
 -- precio_unitario. Todo va en una TRANSACCIÓN: si algo falla, no se guarda nada.
--- p_nota: la nota del pedido NO se usa en la versión actual (HU v2.4); la app
--- enviará NULL. El parámetro queda para una versión futura.
 DROP PROCEDURE IF EXISTS sp_CrearPedido $$
 CREATE PROCEDURE sp_CrearPedido(
   IN p_usuario_id       INT UNSIGNED,
-  IN p_nota             VARCHAR(200),
   IN p_tarjeta_ultimos4 CHAR(4),
   IN p_productos        JSON
 )
@@ -238,22 +226,22 @@ BEGIN
 
   START TRANSACTION;
 
-    -- 1. Cuenta cuántos productos del carrito están activos y NO agotados.
+    -- 1. Cuenta cuántos productos del carrito están activos.
     --    JSON_TABLE convierte el carrito JSON en filas para poder hacer JOIN.
     SELECT COUNT(*) INTO v_disponibles
       FROM JSON_TABLE(p_productos, '$[*]' COLUMNS (producto_id INT PATH '$.producto_id')) AS c
       JOIN producto p ON p.id = c.producto_id
-     WHERE p.activo AND NOT p.agotado;
+     WHERE p.activo;
 
-    -- Si falta alguno, es porque se agotó o se eliminó mientras el cliente compraba
+    -- Si falta alguno, es porque se eliminó mientras el cliente compraba
     IF v_disponibles <> JSON_LENGTH(p_productos) THEN
       SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409,
         MESSAGE_TEXT = 'Uno de los productos ya no está disponible';
     END IF;
 
     -- 2. El pedido (el total se calcula en el paso 4)
-    INSERT INTO pedido (usuario_id, nota, total, tarjeta_ultimos4)
-    VALUES (p_usuario_id, p_nota, 0, p_tarjeta_ultimos4);
+    INSERT INTO pedido (usuario_id, total, tarjeta_ultimos4)
+    VALUES (p_usuario_id, 0, p_tarjeta_ultimos4);
     SET v_pedido_id = LAST_INSERT_ID();
 
     -- 3. Los productos del pedido, con el precio actual
@@ -282,7 +270,8 @@ END $$
 DROP PROCEDURE IF EXISTS sp_ObtenerPedido $$
 CREATE PROCEDURE sp_ObtenerPedido(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
 BEGIN
-  SELECT pe.id, pe.estado, pe.nota, pe.total, pe.tarjeta_ultimos4, pe.fecha,
+  -- El estado no se guarda: la API lo calcula con la fecha del pedido.
+  SELECT pe.id, pe.total, pe.tarjeta_ultimos4, pe.fecha,
          u.nombre_completo AS cliente, u.telefono
     FROM pedido pe
     JOIN usuario u ON u.id = pe.usuario_id
@@ -303,44 +292,11 @@ END $$
 DROP PROCEDURE IF EXISTS sp_ListarPedidosCliente $$
 CREATE PROCEDURE sp_ListarPedidosCliente(IN p_usuario_id INT UNSIGNED)
 BEGIN
-  SELECT id, fecha, total, estado
+  SELECT id, fecha, total
     FROM pedido
    WHERE usuario_id = p_usuario_id
    ORDER BY fecha DESC;
 END $$
-
--- HU-16 · Pedidos activos (todos menos Entregado), del más antiguo al más reciente
-DROP PROCEDURE IF EXISTS sp_ListarPedidosActivos $$
-CREATE PROCEDURE sp_ListarPedidosActivos()
-BEGIN
-  SELECT pe.id, pe.estado, pe.nota, pe.total, pe.fecha,
-         u.nombre_completo AS cliente, u.telefono
-    FROM pedido pe
-    JOIN usuario u ON u.id = pe.usuario_id
-   WHERE pe.estado <> 'Entregado'
-   ORDER BY pe.fecha;
-END $$
-
--- HU-16 · Historial con filtros opcionales por estado y por fecha (NULL = todos)
-DROP PROCEDURE IF EXISTS sp_ListarHistorialPedidos $$
-CREATE PROCEDURE sp_ListarHistorialPedidos(IN p_estado VARCHAR(20), IN p_fecha DATE)
-BEGIN
-  SELECT pe.id, pe.estado, pe.total, pe.fecha, u.nombre_completo AS cliente
-    FROM pedido pe
-    JOIN usuario u ON u.id = pe.usuario_id
-   WHERE (p_estado IS NULL OR pe.estado = p_estado)
-     AND (p_fecha  IS NULL OR DATE(pe.fecha) = p_fecha)
-   ORDER BY pe.fecha DESC;
-END $$
-
--- HU-16 · Cambiar el estado. La API ya revisó que sea el siguiente en orden.
-DROP PROCEDURE IF EXISTS sp_CambiarEstadoPedido $$
-CREATE PROCEDURE sp_CambiarEstadoPedido(IN p_id INT UNSIGNED, IN p_estado VARCHAR(20))
-BEGIN
-  UPDATE pedido SET estado = p_estado WHERE id = p_id;
-  SELECT id, estado FROM pedido WHERE id = p_id;
-END $$
-
 
 -- =====================================================================
 --  RESERVAS  (HU-10, HU-11, HU-18)
@@ -361,9 +317,7 @@ CREATE PROCEDURE sp_CrearReserva(
   IN p_usuario_id INT UNSIGNED,
   IN p_fecha      DATE,
   IN p_hora       TIME,
-  IN p_personas   TINYINT UNSIGNED,
-  IN p_motivo     VARCHAR(30),
-  IN p_comentario VARCHAR(250)
+  IN p_personas   TINYINT UNSIGNED
 )
 BEGIN
   DECLARE v_candado  VARCHAR(40) DEFAULT CONCAT('al_forno_reserva_', p_fecha);
@@ -400,8 +354,8 @@ BEGIN
   END IF;
 
   -- 4. Guarda la reserva y suelta el candado
-  INSERT INTO reserva (usuario_id, fecha, hora, personas, motivo, comentario)
-  VALUES (p_usuario_id, p_fecha, p_hora, p_personas, p_motivo, p_comentario);
+  INSERT INTO reserva (usuario_id, fecha, hora, personas)
+  VALUES (p_usuario_id, p_fecha, p_hora, p_personas);
 
   DO RELEASE_LOCK(v_candado);
 
@@ -426,7 +380,7 @@ END $$
 DROP PROCEDURE IF EXISTS sp_ObtenerReserva $$
 CREATE PROCEDURE sp_ObtenerReserva(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
 BEGIN
-  SELECT id, fecha, hora, personas, motivo, comentario, estado
+  SELECT id, fecha, hora, personas, estado
     FROM reserva
    WHERE id = p_id
      AND (p_usuario_id IS NULL OR usuario_id = p_usuario_id);
@@ -436,22 +390,10 @@ END $$
 DROP PROCEDURE IF EXISTS sp_ListarReservasCliente $$
 CREATE PROCEDURE sp_ListarReservasCliente(IN p_usuario_id INT UNSIGNED)
 BEGIN
-  SELECT id, fecha, hora, personas, motivo, comentario, estado
+  SELECT id, fecha, hora, personas, estado
     FROM reserva
    WHERE usuario_id = p_usuario_id AND fecha >= CURDATE()
    ORDER BY fecha, hora;
-END $$
-
--- HU-18 · Reservas de un día (administrador), ordenadas por hora
-DROP PROCEDURE IF EXISTS sp_ListarReservasDia $$
-CREATE PROCEDURE sp_ListarReservasDia(IN p_fecha DATE)
-BEGIN
-  SELECT r.id, r.hora, r.personas, r.motivo, r.comentario, r.estado,
-         u.nombre_completo AS cliente, u.telefono
-    FROM reserva r
-    JOIN usuario u ON u.id = r.usuario_id
-   WHERE r.fecha = p_fecha
-   ORDER BY r.hora;
 END $$
 
 -- HU-11 / HU-18 · Cancelar una reserva CONFIRMADA (el espacio queda libre).
@@ -522,52 +464,6 @@ BEGIN
   CALL sp_ObtenerAgenda(p_id);
 END $$
 
-
--- =====================================================================
---  TICKETS  (HU-13)
--- =====================================================================
-
--- HU-13 · Comprar entradas. Antes, la API valida la cantidad (1 a 6),
--- revisa que el evento tenga cover, aprueba el pago simulado y genera el
--- código. El total se calcula con el precio actual del evento.
-DROP PROCEDURE IF EXISTS sp_ComprarTickets $$
-CREATE PROCEDURE sp_ComprarTickets(
-  IN p_usuario_id       INT UNSIGNED,
-  IN p_agenda_id        INT UNSIGNED,
-  IN p_cantidad         TINYINT UNSIGNED,
-  IN p_codigo           CHAR(11),
-  IN p_tarjeta_ultimos4 CHAR(4)
-)
-BEGIN
-  INSERT INTO ticket (codigo, usuario_id, agenda_id, cantidad, total, tarjeta_ultimos4)
-  SELECT p_codigo, p_usuario_id, id, p_cantidad, precio_entrada * p_cantidad, p_tarjeta_ultimos4
-    FROM agenda
-   WHERE id = p_agenda_id;
-
-  CALL sp_ObtenerTicket(LAST_INSERT_ID(), p_usuario_id);
-END $$
-
--- HU-13 · Un ticket (con el nombre y la descripción del evento)
-DROP PROCEDURE IF EXISTS sp_ObtenerTicket $$
-CREATE PROCEDURE sp_ObtenerTicket(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
-BEGIN
-  SELECT t.id, t.codigo, t.cantidad, t.total, t.tarjeta_ultimos4,
-         a.nombre AS evento, a.descripcion
-    FROM ticket t
-    JOIN agenda a ON a.id = t.agenda_id
-   WHERE t.id = p_id AND t.usuario_id = p_usuario_id;
-END $$
-
--- HU-13 · Mis tickets (del más reciente al más antiguo)
-DROP PROCEDURE IF EXISTS sp_ListarTicketsCliente $$
-CREATE PROCEDURE sp_ListarTicketsCliente(IN p_usuario_id INT UNSIGNED)
-BEGIN
-  SELECT t.id, t.codigo, t.cantidad, t.total, a.nombre AS evento, a.descripcion
-    FROM ticket t
-    JOIN agenda a ON a.id = t.agenda_id
-   WHERE t.usuario_id = p_usuario_id
-   ORDER BY t.id DESC;
-END $$
 
 DELIMITER ;
 

@@ -17,10 +17,13 @@
 
 -- ---------------------------------------------------------------------
 --  DECISIONES DE DISEÑO (versión 2.0)
---  · 8 tablas: solo lo que piden las historias de usuario.
+--  · 7 tablas: solo lo que piden las historias de usuario.
+--  · 21 oct 2026: se quitaron la tabla ticket y las columnas que la app
+--    no usa (producto.agotado, pedido.estado, pedido.nota,
+--    reserva.motivo y reserva.comentario).
 --  · El horario y los datos del restaurante NO están aquí: la app no los
 --    edita, así que están quemados en la API (api/src/config/restaurante.js).
---  · Las listas fijas (rol, categoría, estados, motivos) son columnas ENUM
+--  · Las listas fijas (rol, categoría, estado de la reserva) son columnas ENUM
 --    en lugar de tablas aparte.
 --  · Las validaciones de formato (cédula, teléfono, precio, cantidades...)
 --    las hace la API. La base solo garantiza: datos obligatorios (NOT NULL),
@@ -88,7 +91,6 @@ CREATE TABLE producto (
   -- El orden del ENUM es el orden en que salen las categorías en el menú
   categoria    ENUM('Pizzas', 'Cucina italiana', 'Coctelería', 'Cervezas') NOT NULL,
   precio       INT UNSIGNED NOT NULL,          -- colones enteros
-  agotado      BOOLEAN      NOT NULL DEFAULT FALSE,  -- NO se usa en la versión actual (HU v2.3); queda para una versión futura
   activo       BOOLEAN      NOT NULL DEFAULT TRUE,   -- "eliminar" lo desactiva (no se borra)
 
   PRIMARY KEY (id)
@@ -116,10 +118,6 @@ CREATE TABLE promocion (
 CREATE TABLE pedido (
   id                INT UNSIGNED NOT NULL AUTO_INCREMENT,   -- número de pedido
   usuario_id        INT UNSIGNED NOT NULL,                  -- el cliente
-  -- El orden del ENUM es el orden obligatorio de los estados
-  estado            ENUM('Recibido', 'En preparación', 'Listo para recoger', 'Entregado')
-                    NOT NULL DEFAULT 'Recibido',
-  nota              VARCHAR(200) NULL,                      -- NO se usa en la versión actual (HU v2.4); queda para una versión futura
   total             INT UNSIGNED NOT NULL,                  -- lo que se pagó
   tarjeta_ultimos4  CHAR(4)      NOT NULL,                  -- se muestra en el comprobante
   fecha             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -152,9 +150,6 @@ CREATE TABLE reserva (
   fecha       DATE             NOT NULL,
   hora        TIME             NOT NULL,        -- hora exacta (lo valida la API)
   personas    TINYINT UNSIGNED NOT NULL,        -- de 1 a 8 (lo valida la API)
-  motivo      ENUM('Reserva de mesa', 'Celebración o cumpleaños', 'Evento privado', 'Otro')
-              NOT NULL DEFAULT 'Reserva de mesa',
-  comentario  VARCHAR(250)     NULL,
   estado      ENUM('Confirmada', 'Cancelada') NOT NULL DEFAULT 'Confirmada',
 
   PRIMARY KEY (id),
@@ -168,7 +163,7 @@ CREATE TABLE reserva (
 --  6. AGENDA  (HU-12 Agenda, HU-13 Tickets, HU-19 Gestionar agenda)
 --  Actividades fijas y eventos especiales en una sola tabla.
 --  El día, la fecha y la hora se escriben en la descripción.
---  precio_entrada NULL = entrada gratuita · con precio = cover (se compra ticket)
+--  precio_entrada NULL = entrada gratuita · con precio = cover (informativo)
 -- =====================================================================
 CREATE TABLE agenda (
   id              INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -180,24 +175,5 @@ CREATE TABLE agenda (
   PRIMARY KEY (id)
 );
 
-
--- =====================================================================
---  7. TICKET  (HU-13 Tickets y Mis tickets)
---  total guarda lo que se pagó: si cambia el cover, el ticket no cambia.
--- =====================================================================
-CREATE TABLE ticket (
-  id                INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-  codigo            CHAR(11)         NOT NULL,   -- ej. AF-7K2M9QX4 (lo genera la API; se muestra como QR)
-  usuario_id        INT UNSIGNED     NOT NULL,   -- el cliente
-  agenda_id         INT UNSIGNED     NOT NULL,   -- el evento
-  cantidad          TINYINT UNSIGNED NOT NULL,   -- de 1 a 6 (lo valida la API)
-  total             INT UNSIGNED     NOT NULL,
-  tarjeta_ultimos4  CHAR(4)          NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE (codigo),                               -- cada código es único
-  FOREIGN KEY (usuario_id) REFERENCES usuario (id),
-  FOREIGN KEY (agenda_id)  REFERENCES agenda (id)
-);
 
 -- Fin de 01_tablas.sql
