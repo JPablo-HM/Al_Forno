@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  02_procedimientos.sql  →  Procedimientos almacenados
 --
---  Versión 2.0 · 8 de octubre de 2026 (versión simplificada)
+--  Versión 2.1 · 22 de octubre de 2026 (seguridad de la cuenta)
 --  Ejecutar después de 01_tablas.sql. Se puede volver a ejecutar sin
 --  borrar datos (cada procedimiento se elimina y se vuelve a crear).
 --
@@ -13,12 +13,20 @@
 --    · API · services: reglas del negocio (horario, fechas, estado del
 --      pedido calculado por tiempo...).
 --    · Procedimientos (este archivo): leer y guardar datos. Casi todos
---      son UNA sola consulta. Solo dos tienen más lógica:
+--      son UNA sola consulta. Solo cuatro tienen más lógica:
 --        ★ sp_CrearPedido  → transacción: el pedido y sus productos se
 --                             guardan juntos, o no se guarda nada.
 --        ★ sp_CrearReserva → candado: si dos clientes reservan al mismo
 --                             tiempo, el segundo espera su turno, así
 --                             nunca hay más de 3 reservas por hora.
+--        ★ sp_RegistrarUsuario  → transacción: el usuario, sus 3
+--                             respuestas de seguridad y su primera
+--                             contraseña se guardan juntos.
+--        ★ sp_CambiarContrasena → transacción: la contraseña nueva va al
+--                             usuario y al historial al mismo tiempo.
+--    · Seguridad (v2.1): las reglas (3 intentos = 1 minuto, 90 días,
+--      últimas 5 contraseñas, vencimiento de códigos) están en la API.
+--      Aquí solo se leen y se guardan los datos, ya cifrados.
 --
 --  ---------------------------------------------------------------
 --  ERRORES DE NEGOCIO
@@ -47,51 +55,339 @@ DELIMITER $$
 
 -- =====================================================================
 --  CUENTA  (HU-01, HU-02, HU-14)
+--  Seguridad de la cuenta (HU-20 a HU-24) en las secciones siguientes.
+--
+--  Los datos sensibles llegan YA protegidos desde la API (HU-23):
+--    p_..._hash     → bcrypt o SHA-256 (no se pueden volver atrás)
+--    p_..._cifrado  → AES-256 (solo la API tiene la llave)
 -- =====================================================================
 
--- HU-01 · Registro público: siempre crea un CLIENTE.
--- p_contrasena_hash: la API ya la cifró con bcrypt.
+-- HU-01 · Registro público: siempre crea un CLIENTE en estado PENDIENTE
+-- (no puede iniciar sesión hasta confirmar el correo).
+-- ★ Transacción: el usuario, sus 3 respuestas de seguridad y su primera
+--   contraseña en el historial se guardan juntos, o no se guarda nada.
+-- p_respuestas: [{"pregunta_id": 1, "respuesta_hash": "$2b$10$..."}, ...]
 DROP PROCEDURE IF EXISTS sp_RegistrarUsuario $$
 CREATE PROCEDURE sp_RegistrarUsuario(
-  IN p_nombre_completo VARCHAR(100),
-  IN p_cedula          CHAR(9),
-  IN p_telefono        CHAR(8),
-  IN p_correo          VARCHAR(254),
-  IN p_contrasena_hash CHAR(60)
+  IN p_nombre_completo   VARCHAR(100),
+  IN p_cedula_cifrada    VARCHAR(100),
+  IN p_cedula_hash       CHAR(64),
+  IN p_telefono_cifrado  VARCHAR(100),
+  IN p_correo            VARCHAR(254),
+  IN p_contrasena_hash   CHAR(60),
+  IN p_respuestas        JSON
 )
 BEGIN
-  -- HU-01: "No se permite registrar un correo o una cédula que ya existen"
+  DECLARE v_usuario_id INT UNSIGNED;
+
+  -- Si ocurre cualquier error: deshace lo guardado y reenvía el error a la API
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+
+  -- HU-01: "No se permite registrar un correo o una cédula que ya existen".
+  -- La cédula se busca por su huella (cedula_hash), porque cifrada con AES
+  -- nunca da el mismo texto dos veces.
   IF EXISTS (SELECT 1 FROM usuario WHERE correo = p_correo) THEN
     SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409, MESSAGE_TEXT = 'Ese correo ya está registrado';
   END IF;
-  IF EXISTS (SELECT 1 FROM usuario WHERE cedula = p_cedula) THEN
+  IF EXISTS (SELECT 1 FROM usuario WHERE cedula_hash = p_cedula_hash) THEN
     SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409, MESSAGE_TEXT = 'Esa cédula ya está registrada';
   END IF;
 
-  INSERT INTO usuario (rol, nombre_completo, cedula, telefono, correo, contrasena_hash)
-  VALUES ('CLIENTE', p_nombre_completo, p_cedula, p_telefono, p_correo, p_contrasena_hash);
+  START TRANSACTION;
 
-  -- Devuelve el usuario nuevo (queda con la sesión iniciada)
-  CALL sp_ObtenerUsuario(LAST_INSERT_ID());
+    -- 1. El usuario (estado PENDIENTE por defecto)
+    INSERT INTO usuario (rol, nombre_completo, cedula, cedula_hash, telefono, correo, contrasena_hash)
+    VALUES ('CLIENTE', p_nombre_completo, p_cedula_cifrada, p_cedula_hash, p_telefono_cifrado,
+            p_correo, p_contrasena_hash);
+    SET v_usuario_id = LAST_INSERT_ID();
+
+    -- 2. Las 3 respuestas de seguridad (HU-01, se usan en HU-22).
+    --    JSON_TABLE convierte la lista JSON en filas.
+    INSERT INTO usuario_respuesta (usuario_id, pregunta_id, respuesta_hash)
+    SELECT v_usuario_id, r.pregunta_id, r.respuesta_hash
+      FROM JSON_TABLE(p_respuestas, '$[*]' COLUMNS (
+             pregunta_id    INT      PATH '$.pregunta_id',
+             respuesta_hash CHAR(60) PATH '$.respuesta_hash')) AS r;
+
+    -- 3. La primera contraseña queda en el historial (HU-20: no repetir)
+    INSERT INTO contrasena_historial (usuario_id, contrasena_hash)
+    VALUES (v_usuario_id, p_contrasena_hash);
+
+  COMMIT;
+
+  -- Devuelve el usuario nuevo
+  CALL sp_ObtenerUsuario(v_usuario_id);
 END $$
 
 -- HU-02 / HU-14 · Datos para iniciar sesión. La API compara la contraseña
--- con el hash usando bcrypt.
+-- con el hash usando bcrypt y revisa el estado, el bloqueo y la vigencia.
 DROP PROCEDURE IF EXISTS sp_ObtenerUsuarioPorCorreo $$
 CREATE PROCEDURE sp_ObtenerUsuarioPorCorreo(IN p_correo VARCHAR(254))
 BEGIN
-  SELECT id, rol, nombre_completo, correo, contrasena_hash
+  SELECT id, rol, nombre_completo, correo, contrasena_hash,
+         estado,                -- HU-01: PENDIENTE no puede entrar
+         contrasena_fecha,      -- HU-20: vence a los 90 días
+         intentos_fallidos,     -- HU-02: 3 intentos
+         bloqueado_hasta,       -- HU-02: bloqueo de 1 minuto
+         authenticator_activo   -- HU-21: si puede usar Google Authenticator
     FROM usuario
    WHERE correo = p_correo;
 END $$
 
--- Perfil del usuario (sin la contraseña)
+-- Perfil del usuario (sin la contraseña). La cédula y el teléfono salen
+-- cifrados: la API los descifra antes de enviarlos a la app.
 DROP PROCEDURE IF EXISTS sp_ObtenerUsuario $$
 CREATE PROCEDURE sp_ObtenerUsuario(IN p_id INT UNSIGNED)
 BEGIN
-  SELECT id, rol, nombre_completo, cedula, telefono, correo
+  SELECT id, rol, nombre_completo, cedula, telefono, correo, estado, authenticator_activo
     FROM usuario
    WHERE id = p_id;
+END $$
+
+
+-- =====================================================================
+--  VERIFICACIÓN DE CORREO Y DOBLE FACTOR  (HU-01, HU-21)
+--  La API genera el código, lo envía por correo y aquí guarda solo su
+--  hash SHA-256 (HU-23).
+-- =====================================================================
+
+-- Guarda un código nuevo. Los códigos anteriores del mismo tipo dejan de
+-- servir (HU-21: "el cliente puede pedir uno nuevo y el anterior deja de
+-- servir"). p_minutos: 1440 (24 h) para VERIFICACION, 2 para DOBLE_FACTOR.
+DROP PROCEDURE IF EXISTS sp_GuardarToken $$
+CREATE PROCEDURE sp_GuardarToken(
+  IN p_usuario_id INT UNSIGNED,
+  IN p_tipo       VARCHAR(20),
+  IN p_token_hash CHAR(64),
+  IN p_minutos    INT UNSIGNED
+)
+BEGIN
+  UPDATE token SET usado = TRUE
+   WHERE usuario_id = p_usuario_id AND tipo = p_tipo AND NOT usado;
+
+  INSERT INTO token (usuario_id, tipo, token_hash, vence)
+  VALUES (p_usuario_id, p_tipo, p_token_hash, NOW() + INTERVAL p_minutos MINUTE);
+END $$
+
+-- Usa un código: solo sirve si existe, es de ese tipo, no se ha usado y
+-- no ha vencido. Al usarlo queda marcado (un solo uso).
+-- p_usuario_id: NULL para el link de verificación (no se sabe quién es);
+-- el id del usuario para el doble factor.
+-- Devuelve { usuario_id } si sirvió, o una lista vacía si no.
+DROP PROCEDURE IF EXISTS sp_UsarToken $$
+CREATE PROCEDURE sp_UsarToken(
+  IN p_usuario_id INT UNSIGNED,
+  IN p_tipo       VARCHAR(20),
+  IN p_token_hash CHAR(64)
+)
+BEGIN
+  DECLARE v_id         INT UNSIGNED;
+  DECLARE v_usuario_id INT UNSIGNED;
+  DECLARE v_marcados   INT;
+
+  SELECT id, usuario_id INTO v_id, v_usuario_id
+    FROM token
+   WHERE token_hash = p_token_hash
+     AND tipo = p_tipo
+     AND NOT usado
+     AND vence > NOW()
+     AND (p_usuario_id IS NULL OR usuario_id = p_usuario_id)
+   LIMIT 1;
+
+  -- "AND NOT usado" otra vez: si llegan dos peticiones al mismo tiempo,
+  -- solo una logra marcarlo (ROW_COUNT() = 1).
+  UPDATE token SET usado = TRUE WHERE id = v_id AND NOT usado;
+  SET v_marcados = ROW_COUNT();
+
+  SELECT v_usuario_id AS usuario_id FROM DUAL WHERE v_marcados = 1;
+END $$
+
+-- HU-01 · El cliente confirmó el link "¿Eres vos?": la cuenta queda ACTIVA
+DROP PROCEDURE IF EXISTS sp_ActivarUsuario $$
+CREATE PROCEDURE sp_ActivarUsuario(IN p_id INT UNSIGNED)
+BEGIN
+  UPDATE usuario SET estado = 'ACTIVO' WHERE id = p_id;
+  CALL sp_ObtenerUsuario(p_id);
+END $$
+
+
+-- =====================================================================
+--  BLOQUEO POR INTENTOS  (HU-02)
+--  La regla (3 intentos = 1 minuto) está en la API; aquí solo se guarda.
+-- =====================================================================
+
+-- p_bloqueado_hasta: NULL = sin bloqueo
+DROP PROCEDURE IF EXISTS sp_ActualizarIntentos $$
+CREATE PROCEDURE sp_ActualizarIntentos(
+  IN p_id              INT UNSIGNED,
+  IN p_intentos        TINYINT UNSIGNED,
+  IN p_bloqueado_hasta DATETIME
+)
+BEGIN
+  UPDATE usuario
+     SET intentos_fallidos = p_intentos,
+         bloqueado_hasta   = p_bloqueado_hasta
+   WHERE id = p_id;
+END $$
+
+
+-- =====================================================================
+--  PREGUNTAS DE SEGURIDAD  (HU-01, HU-22)
+-- =====================================================================
+
+-- HU-01 · La lista para elegir en el registro
+DROP PROCEDURE IF EXISTS sp_ListarPreguntas $$
+CREATE PROCEDURE sp_ListarPreguntas()
+BEGIN
+  SELECT id, texto FROM pregunta_seguridad ORDER BY id;
+END $$
+
+-- HU-22 · Las 3 preguntas del cliente, con el hash de cada respuesta.
+-- La API muestra solo el texto y compara las respuestas con bcrypt.
+DROP PROCEDURE IF EXISTS sp_ObtenerPreguntasUsuario $$
+CREATE PROCEDURE sp_ObtenerPreguntasUsuario(IN p_usuario_id INT UNSIGNED)
+BEGIN
+  SELECT p.id AS pregunta_id, p.texto, r.respuesta_hash
+    FROM usuario_respuesta r
+    JOIN pregunta_seguridad p ON p.id = r.pregunta_id
+   WHERE r.usuario_id = p_usuario_id
+   ORDER BY p.id;
+END $$
+
+
+-- =====================================================================
+--  CONTRASEÑAS  (HU-20, HU-22)
+-- =====================================================================
+
+-- HU-20 · Las últimas contraseñas (p_cantidad = 5), de la más nueva a la
+-- más vieja. La API compara la nueva con cada una usando bcrypt.
+DROP PROCEDURE IF EXISTS sp_ListarHistorialContrasenas $$
+CREATE PROCEDURE sp_ListarHistorialContrasenas(
+  IN p_usuario_id INT UNSIGNED,
+  IN p_cantidad   TINYINT UNSIGNED
+)
+BEGIN
+  SELECT contrasena_hash
+    FROM contrasena_historial
+   WHERE usuario_id = p_usuario_id
+   ORDER BY fecha DESC, id DESC
+   LIMIT p_cantidad;
+END $$
+
+-- HU-20 / HU-22 · Cambiar o recuperar la contraseña.
+-- ★ Transacción: la contraseña nueva se guarda en el usuario y en el
+--   historial al mismo tiempo. También reinicia la fecha (vigencia de
+--   90 días) y quita los intentos fallidos y el bloqueo.
+DROP PROCEDURE IF EXISTS sp_CambiarContrasena $$
+CREATE PROCEDURE sp_CambiarContrasena(
+  IN p_id              INT UNSIGNED,
+  IN p_contrasena_hash CHAR(60)
+)
+BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+
+  IF NOT EXISTS (SELECT 1 FROM usuario WHERE id = p_id) THEN
+    SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5404, MESSAGE_TEXT = 'El usuario no existe';
+  END IF;
+
+  START TRANSACTION;
+
+    UPDATE usuario
+       SET contrasena_hash   = p_contrasena_hash,
+           contrasena_fecha  = NOW(),
+           intentos_fallidos = 0,
+           bloqueado_hasta   = NULL
+     WHERE id = p_id;
+
+    INSERT INTO contrasena_historial (usuario_id, contrasena_hash)
+    VALUES (p_id, p_contrasena_hash);
+
+  COMMIT;
+
+  CALL sp_ObtenerUsuario(p_id);
+END $$
+
+
+-- =====================================================================
+--  GOOGLE AUTHENTICATOR  (HU-21, HU-22)
+--  La clave secreta llega cifrada con AES desde la API (HU-23).
+-- =====================================================================
+
+-- Paso 1 de la vinculación: guarda la clave nueva, todavía SIN activar
+-- (el cliente aún no ha escrito el primer código).
+DROP PROCEDURE IF EXISTS sp_GuardarAuthenticator $$
+CREATE PROCEDURE sp_GuardarAuthenticator(
+  IN p_id               INT UNSIGNED,
+  IN p_secreto_cifrado  VARCHAR(200)
+)
+BEGIN
+  UPDATE usuario
+     SET authenticator_secreto = p_secreto_cifrado,
+         authenticator_activo  = FALSE
+   WHERE id = p_id;
+  CALL sp_ObtenerUsuario(p_id);
+END $$
+
+-- Paso 2: el primer código fue correcto, queda vinculado
+DROP PROCEDURE IF EXISTS sp_ActivarAuthenticator $$
+CREATE PROCEDURE sp_ActivarAuthenticator(IN p_id INT UNSIGNED)
+BEGIN
+  UPDATE usuario
+     SET authenticator_activo = TRUE
+   WHERE id = p_id AND authenticator_secreto IS NOT NULL;
+  CALL sp_ObtenerUsuario(p_id);
+END $$
+
+-- Desvincular: se borra la clave
+DROP PROCEDURE IF EXISTS sp_DesvincularAuthenticator $$
+CREATE PROCEDURE sp_DesvincularAuthenticator(IN p_id INT UNSIGNED)
+BEGIN
+  UPDATE usuario
+     SET authenticator_secreto = NULL,
+         authenticator_activo  = FALSE
+   WHERE id = p_id;
+  CALL sp_ObtenerUsuario(p_id);
+END $$
+
+-- La clave cifrada, para que la API valide el código de 6 dígitos
+DROP PROCEDURE IF EXISTS sp_ObtenerAuthenticator $$
+CREATE PROCEDURE sp_ObtenerAuthenticator(IN p_id INT UNSIGNED)
+BEGIN
+  SELECT authenticator_secreto, authenticator_activo
+    FROM usuario
+   WHERE id = p_id;
+END $$
+
+
+-- =====================================================================
+--  AUDITORÍA  (HU-24)
+--  Solo se agregan filas: no hay procedimientos para editar ni borrar.
+--  La fecha y la hora las pone MySQL (hora de Costa Rica).
+-- =====================================================================
+
+-- p_actividad: REGISTRO, LOGIN_EXITOSO, LOGIN_FALLIDO, BLOQUEO,
+--              CAMBIO_CONTRASENA, RECUPERACION
+-- p_resultado: EXITO o FALLO
+DROP PROCEDURE IF EXISTS sp_RegistrarAuditoria $$
+CREATE PROCEDURE sp_RegistrarAuditoria(
+  IN p_usuario_id  INT UNSIGNED,
+  IN p_correo      VARCHAR(254),
+  IN p_actividad   VARCHAR(20),
+  IN p_resultado   VARCHAR(5),
+  IN p_ip          VARCHAR(45),
+  IN p_dispositivo VARCHAR(200)
+)
+BEGIN
+  INSERT INTO auditoria (usuario_id, correo, actividad, resultado, ip, dispositivo)
+  VALUES (p_usuario_id, p_correo, p_actividad, p_resultado, p_ip, p_dispositivo);
 END $$
 
 
@@ -408,60 +704,6 @@ BEGIN
      AND estado = 'Confirmada'
      AND (p_usuario_id IS NULL OR usuario_id = p_usuario_id);
   SELECT ROW_COUNT() AS cancelada;
-END $$
-
-
--- =====================================================================
---  AGENDA  (HU-12, HU-19)
---  precio_entrada NULL = entrada gratuita · con precio = cover
--- =====================================================================
-
--- HU-12 · Lo que ve el cliente
-DROP PROCEDURE IF EXISTS sp_ListarAgenda $$
-CREATE PROCEDURE sp_ListarAgenda()
-BEGIN
-  SELECT id, nombre, descripcion, precio_entrada FROM agenda WHERE activo ORDER BY id;
-END $$
-
--- HU-19 · Todo (administrador), incluidos los desactivados
-DROP PROCEDURE IF EXISTS sp_ListarAgendaAdmin $$
-CREATE PROCEDURE sp_ListarAgendaAdmin()
-BEGIN
-  SELECT id, nombre, descripcion, precio_entrada, activo FROM agenda ORDER BY activo DESC, id;
-END $$
-
-DROP PROCEDURE IF EXISTS sp_ObtenerAgenda $$
-CREATE PROCEDURE sp_ObtenerAgenda(IN p_id INT UNSIGNED)
-BEGIN
-  SELECT id, nombre, descripcion, precio_entrada, activo FROM agenda WHERE id = p_id;
-END $$
-
-DROP PROCEDURE IF EXISTS sp_CrearAgenda $$
-CREATE PROCEDURE sp_CrearAgenda(
-  IN p_nombre VARCHAR(100), IN p_descripcion VARCHAR(500), IN p_precio_entrada INT UNSIGNED)
-BEGIN
-  INSERT INTO agenda (nombre, descripcion, precio_entrada)
-  VALUES (p_nombre, p_descripcion, p_precio_entrada);
-  CALL sp_ObtenerAgenda(LAST_INSERT_ID());
-END $$
-
-DROP PROCEDURE IF EXISTS sp_EditarAgenda $$
-CREATE PROCEDURE sp_EditarAgenda(
-  IN p_id INT UNSIGNED, IN p_nombre VARCHAR(100),
-  IN p_descripcion VARCHAR(500), IN p_precio_entrada INT UNSIGNED)
-BEGIN
-  UPDATE agenda
-     SET nombre = p_nombre, descripcion = p_descripcion, precio_entrada = p_precio_entrada
-   WHERE id = p_id;
-  CALL sp_ObtenerAgenda(p_id);
-END $$
-
--- HU-19 · Activar (TRUE) o desactivar (FALSE)
-DROP PROCEDURE IF EXISTS sp_CambiarEstadoAgenda $$
-CREATE PROCEDURE sp_CambiarEstadoAgenda(IN p_id INT UNSIGNED, IN p_activo BOOLEAN)
-BEGIN
-  UPDATE agenda SET activo = p_activo WHERE id = p_id;
-  CALL sp_ObtenerAgenda(p_id);
 END $$
 
 

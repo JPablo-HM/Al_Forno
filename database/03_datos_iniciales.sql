@@ -2,11 +2,12 @@
 --  AL FORNO · Base de datos
 --  03_datos_iniciales.sql  →  Datos con los que arranca el sistema
 --
---  Versión 2.0 · 8 de octubre de 2026 (versión simplificada)
+--  Versión 2.1 · 22 de octubre de 2026 (seguridad de la cuenta)
 --  Ejecutar después de 01_tablas.sql y 02_procedimientos.sql.
 --
 --  El horario y los datos del restaurante (dirección, teléfono) NO están
 --  aquí: están en la API, en api/src/config/restaurante.js.
+--  La agenda tampoco: está quemada en api/src/config/agenda.js.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -25,9 +26,27 @@ START TRANSACTION;
 --    ⚠ Cámbiela antes de usar el servidor final: genere un hash nuevo con
 --      bcrypt (10 rondas) y reemplace el valor de contrasena_hash.
 -- ---------------------------------------------------------------------
-INSERT INTO usuario (rol, nombre_completo, correo, contrasena_hash) VALUES
+--    v2.1: queda ACTIVO (no verifica correo) y sin preguntas de seguridad;
+--    su forma de entrar no cambia (HU-14). La contraseña temporal ya
+--    cumple la política de HU-20 (mayúscula, minúscula, número y símbolo).
+INSERT INTO usuario (rol, nombre_completo, correo, contrasena_hash, estado) VALUES
   ('ADMIN', 'Administrador AL FORNO', 'admin@alforno.cr',
-   '$2b$10$6Iv2bRlSnRthvQJ92ioUz.s6t5YtyU1zH9hqd/Kn1LHbkDIRwfBbG');
+   '$2b$10$6Iv2bRlSnRthvQJ92ioUz.s6t5YtyU1zH9hqd/Kn1LHbkDIRwfBbG', 'ACTIVO');
+
+-- Su contraseña también queda en el historial (HU-20: no repetir)
+INSERT INTO contrasena_historial (usuario_id, contrasena_hash)
+SELECT id, contrasena_hash FROM usuario WHERE correo = 'admin@alforno.cr';
+
+-- ---------------------------------------------------------------------
+-- 1b. Preguntas de seguridad (HU-01, HU-22)
+--     El cliente elige 3 de esta lista al registrarse.
+-- ---------------------------------------------------------------------
+INSERT INTO pregunta_seguridad (texto) VALUES
+  ('¿Cuál es el nombre de tu primera mascota?'),
+  ('¿En qué ciudad nació tu madre?'),
+  ('¿Cuál es el nombre de tu escuela primaria?'),
+  ('¿Cómo se llamaba tu mejor amigo de la infancia?'),
+  ('¿Cuál es tu comida favorita?');
 
 -- ---------------------------------------------------------------------
 -- 2. Productos del menú (HU-03) · 5 por categoría
@@ -58,26 +77,7 @@ INSERT INTO producto (categoria, nombre, descripcion, precio) VALUES
   ('Cervezas',        'Cerveza artesanal costarricense', 'Una opción local diferente. Puedes elegir una IPA o una Pale Ale de una cervecería artesanal nacional, según disponibilidad.', 3500);
 
 -- ---------------------------------------------------------------------
--- 3. Agenda (HU-12), tomada del sitio web
---    precio_entrada NULL = entrada gratuita · con precio = cover
---    El día y la hora van escritos en la descripción.
--- ---------------------------------------------------------------------
-INSERT INTO agenda (nombre, descripcion, precio_entrada) VALUES
-  ('Noche de Jazz',     'Martes 8:00 p.m. Tríos y cuartetos de jazz en vivo para acompañar la cena.',           NULL),
-  ('Micrófono abierto', 'Miércoles 7:30 p.m. Poesía, música o lo que quieras compartir. Inscripción en la barra.', NULL),
-  ('Stand-up Comedy',   'Jueves 8:30 p.m. Una noche de risas con comediantes nacionales.',                       NULL),
-  ('Acústico en vivo',  'Viernes 9:00 p.m. Cantautores y bandas en formato íntimo.',                             NULL),
-  ('DJ Set',            'Sábado 10:00 p.m. Vinilos y buena música para cerrar la semana.',                       NULL),
-  ('Arte y pizza',      'Domingo 4:00 p.m. Exposiciones de arte y talleres para toda la familia.',               NULL);
-
--- Ejemplo de evento con cover (se paga en el restaurante). Se puede editar o
--- desactivar desde el panel del administrador.
-INSERT INTO agenda (nombre, descripcion, precio_entrada) VALUES
-  ('Noche de ópera italiana',
-   'Sábado 15 de noviembre, 8:00 p.m. Arias clásicas en vivo con menú especial.', 8000);
-
--- ---------------------------------------------------------------------
--- 4. Promoción de ejemplo (HU-06). Los días y las fechas van en la
+-- 3. Promoción de ejemplo (HU-06). Los días y las fechas van en la
 --    descripción. Se puede editar o desactivar desde el panel.
 -- ---------------------------------------------------------------------
 INSERT INTO promocion (titulo, descripcion) VALUES

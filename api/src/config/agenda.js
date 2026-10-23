@@ -1,10 +1,10 @@
 // =====================================================================
 // Agenda de actividades (quemada en la API) · HU-12
 //
-// Por ahora la agenda es solo INFORMATIVA: no se compran ni se pagan
-// entradas. Por eso no se lee de la base de datos (la tabla agenda y
-// sus procedimientos quedan sin usarse por el momento). Si cambia una
-// actividad, se cambia aquí.
+// La agenda es solo INFORMATIVA y fija: no se compran ni se pagan
+// entradas y el administrador no la edita. Por eso NO está en la base de
+// datos (la tabla agenda y sus procedimientos se quitaron el 22 de
+// octubre de 2026). Si cambia una actividad, se cambia aquí.
 //
 // Cada actividad:
 //   · id:          número único (lo usa la app como key de la lista)
