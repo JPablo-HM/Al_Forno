@@ -19,13 +19,16 @@ function manejarErrores(err, req, res, next) {
   }
 
   // Errores previstos por la API (ej. 401 "Correo o contraseña incorrectos"):
-  // traen err.status y su mensaje se muestra tal cual.
+  // traen err.status y su mensaje se muestra tal cual. Algunos traen
+  // err.datos con información extra para la app, por ejemplo
+  // { segundos: 45 } cuando la cuenta está bloqueada (423).
   // Cualquier otro error es inesperado: se registra en la consola y el
   // cliente recibe un mensaje general, sin detalles internos.
   const status = err.status || 500;
   if (status === 500) console.error(err);
   res.status(status).json({
     mensaje: status === 500 ? 'Error interno del servidor' : err.message,
+    ...(status !== 500 && err.datos),
   });
 }
 
