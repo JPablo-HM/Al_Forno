@@ -2,7 +2,7 @@
 // PANTALLA · Perfil (pestaña del cliente)    Ruta: /perfil   ·   HU-01, HU-02
 // Quién la ve: visitantes y clientes. Tiene DOS versiones según la sesión:
 //   · Sin sesión: invita a iniciar sesión o crear cuenta.
-//   · Con sesión: los datos del cliente (GET /api/auth/perfil, con el token),
+//   · Con sesión: los datos del cliente (GET /api/perfil, con el token),
 //     accesos a Mis pedidos y Mis reservas, y "Cerrar sesión".
 // =====================================================================
 import { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Boton from '../../components/Boton';
 import { useSesion } from '../../context/SesionContext';
-import { obtenerPerfil } from '../../services/auth';
+import { obtenerPerfil } from '../../services/perfil';
 import { COLORES } from '../../config/config';
 
 export default function Perfil() {

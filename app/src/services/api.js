@@ -9,16 +9,21 @@ import { API_URL } from '../config/config';
 //
 //   pedir('/menu')                                        → GET
 //   pedir('/auth/login', { metodo: 'POST', cuerpo: {...} }) → POST con datos
-//   pedir('/auth/perfil', { token })                       → GET con sesión
+//   pedir('/perfil', { token })                            → GET con sesión
 //
 // Opciones (todas opcionales):
 //   metodo → 'GET' (por defecto), 'POST', 'PUT' o 'DELETE'
 //   cuerpo → objeto con los datos a enviar; se convierte a JSON
-//   token  → token de la sesión; viaja en el encabezado Authorization
+//   token  → token de la sesión (o el "pase" temporal del login y de la
+//            recuperación); viaja en el encabezado Authorization
 //
-// Si la API responde con error (400, 401, 409, 500...), lanza un Error con
-// el mensaje de la API para que la pantalla lo muestre. Si el error es de
-// un campo del formulario, error.campo dice cuál (ej. 'cedula').
+// Si la API responde con error (400, 401, 409, 423, 500...), lanza un Error
+// con el mensaje de la API para que la pantalla lo muestre:
+//   error.campo  → si el error es de un campo del formulario, dice cuál (ej. 'cedula')
+//   error.status → el código HTTP (ej. 423 = cuenta bloqueada)
+//   error.datos  → la respuesta completa, con los datos extra que manda la
+//                  API, por ejemplo { segundos: 45 } en el bloqueo (HU-02)
+//                  o { pendiente: true } si falta verificar el correo (HU-01)
 export async function pedir(ruta, { metodo = 'GET', cuerpo, token } = {}) {
   const encabezados = {};
   if (cuerpo) encabezados['Content-Type'] = 'application/json';
@@ -44,6 +49,7 @@ export async function pedir(ruta, { metodo = 'GET', cuerpo, token } = {}) {
     const error = new Error(datos.mensaje || 'No se pudo completar la acción');
     error.campo = datos.campo;
     error.status = respuesta.status;
+    error.datos = datos;
     throw error;
   }
   return datos;
