@@ -1,6 +1,7 @@
 // =====================================================================
 // COMPONENTE · Opción seleccionable (botón tipo "chip")
-// Se usa en Nueva reserva para escoger día, hora y motivo.
+// Se usa en Nueva reserva (día y hora), en Registro (preguntas de seguridad)
+// y en Iniciar sesión (cómo recibir el código).
 // Props: texto, subtexto (opcional, línea pequeña debajo), seleccionada,
 //        deshabilitada (se ve tenue y no se puede tocar), onPress.
 // =====================================================================

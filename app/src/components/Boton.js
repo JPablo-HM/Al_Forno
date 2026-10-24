@@ -12,8 +12,10 @@ import { COLORES } from '../config/config';
 //   onPress        → función propia; si se pasa, tiene prioridad sobre href
 //   requiereSesion → si no hay sesión, manda a /login en lugar de href
 //   variante       → 'primario' (relleno terracota) o 'secundario' (solo borde)
+//   deshabilitado  → true: se ve tenue y no se puede tocar (ej. mientras
+//                    espera a la API o si la contraseña no cumple la política)
 // Uso: <Boton texto="Ver carrito" href="/carrito" requiereSesion />
-export default function Boton({ texto, href, onPress, requiereSesion = false, variante = 'primario' }) {
+export default function Boton({ texto, href, onPress, requiereSesion = false, variante = 'primario', deshabilitado = false }) {
   const router = useRouter();
   const { usuario } = useSesion();
 
@@ -30,10 +32,16 @@ export default function Boton({ texto, href, onPress, requiereSesion = false, va
   const secundario = variante === 'secundario';
   return (
     // El estilo es una lista: base + secundario (si aplica) + transparencia
-    // mientras se mantiene presionado.
+    // mientras se mantiene presionado o si está deshabilitado.
     <Pressable
       onPress={alTocar}
-      style={({ pressed }) => [estilos.boton, secundario && estilos.secundario, pressed && { opacity: 0.8 }]}
+      disabled={deshabilitado}
+      style={({ pressed }) => [
+        estilos.boton,
+        secundario && estilos.secundario,
+        pressed && { opacity: 0.8 },
+        deshabilitado && { opacity: 0.5 },
+      ]}
     >
       <Text style={[estilos.texto, secundario && estilos.textoSecundario]}>{texto}</Text>
     </Pressable>
