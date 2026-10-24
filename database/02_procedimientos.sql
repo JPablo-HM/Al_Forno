@@ -88,7 +88,7 @@ BEGIN
   END;
 
   -- HU-01: "No se permite registrar un correo o una cédula que ya existen".
-  -- La cédula se busca por su huella (cedula_hash), porque cifrada con AES
+  -- La cédula se busca por su hash (cedula_hash), porque cifrada con AES
   -- nunca da el mismo texto dos veces.
   IF EXISTS (SELECT 1 FROM usuario WHERE correo = p_correo) THEN
     SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409, MESSAGE_TEXT = 'Ese correo ya está registrado';

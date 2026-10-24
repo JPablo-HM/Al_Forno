@@ -78,18 +78,18 @@ SET time_zone = '-06:00';
 --    · contrasena_hash        → hash bcrypt (no se puede volver atrás)
 --    · cedula, telefono,
 --      authenticator_secreto  → cifrado AES-256 (la API los puede leer)
---    · cedula_hash            → huella HMAC-SHA256 de la cédula.
+--    · cedula_hash            → hash HMAC-SHA256 de la cédula.
 --      ¿Por qué? El cifrado AES usa un valor al azar (IV): la misma
 --      cédula cifrada dos veces da dos textos distintos, así que UNIQUE
---      no detectaría la repetida. La huella siempre es igual para la
---      misma cédula: "cifrado para leer, huella para buscar".
+--      no detectaría la repetida. El hash siempre es igual para la
+--      misma cédula: "cifrado para leer, hash para buscar".
 -- =====================================================================
 CREATE TABLE usuario (
   id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
   rol                    ENUM('CLIENTE', 'ADMIN') NOT NULL DEFAULT 'CLIENTE',
   nombre_completo        VARCHAR(100) NOT NULL,
   cedula                 VARCHAR(100) NULL,      -- cifrada con AES (9 dígitos, lo valida la API)
-  cedula_hash            CHAR(64)     NULL,      -- huella de la cédula, para no repetirla
+  cedula_hash            CHAR(64)     NULL,      -- hash de la cédula, para no repetirla
   telefono               VARCHAR(100) NULL,      -- cifrado con AES (8 dígitos, lo valida la API)
   correo                 VARCHAR(254) NOT NULL,
   contrasena_hash        CHAR(60)     NOT NULL,  -- bcrypt; nunca la contraseña
