@@ -4,8 +4,9 @@
 // Las pantallas se agrupan con Stack.Protected según la sesión
 // (mapa de navegación y HU-14):
 //   · Visitantes y clientes: menú inferior (Inicio, Menú, Agenda, Reservas, Perfil).
-//   · Solo sin sesión: Iniciar sesión y Registro.
-//   · Solo clientes: carrito, pago, mis pedidos y nueva reserva.
+//   · Solo sin sesión: Iniciar sesión, Registro y Recuperar contraseña.
+//   · Solo clientes: carrito, pago, mis pedidos, nueva reserva, cambiar
+//     contraseña y Google Authenticator.
 //   · Solo administrador: el panel /admin. El administrador no ve la app de clientes.
 //
 // Cuando la sesión cambia y la pantalla actual deja de estar permitida,
@@ -63,6 +64,7 @@ function Navegacion() {
       <Stack.Protected guard={!usuario}>
         <Stack.Screen name="login" options={{ title: 'Iniciar sesión' }} />
         <Stack.Screen name="registro" options={{ title: 'Crear cuenta' }} />
+        <Stack.Screen name="recuperar" options={{ title: 'Recuperar contraseña' }} />
       </Stack.Protected>
 
       {/* Solo clientes con sesión iniciada */}
@@ -73,6 +75,8 @@ function Navegacion() {
         <Stack.Screen name="mis-pedidos/index" options={{ title: 'Mis pedidos' }} />
         <Stack.Screen name="mis-pedidos/[id]" options={{ title: 'Pedido' }} />
         <Stack.Screen name="nueva-reserva" options={{ title: 'Nueva reserva' }} />
+        <Stack.Screen name="cambiar-contrasena" options={{ title: 'Cambiar contraseña' }} />
+        <Stack.Screen name="autenticador" options={{ title: 'Google Authenticator' }} />
       </Stack.Protected>
 
       {/* Solo administrador */}

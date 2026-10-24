@@ -1,9 +1,11 @@
 // =====================================================================
-// PANTALLA · Perfil (pestaña del cliente)    Ruta: /perfil   ·   HU-01, HU-02
+// PANTALLA · Perfil (pestaña del cliente)    Ruta: /perfil
+// Historias: HU-01, HU-02, HU-20, HU-21
 // Quién la ve: visitantes y clientes. Tiene DOS versiones según la sesión:
 //   · Sin sesión: invita a iniciar sesión o crear cuenta.
 //   · Con sesión: los datos del cliente (GET /api/perfil, con el token),
-//     accesos a Mis pedidos y Mis reservas, y "Cerrar sesión".
+//     accesos a Mis pedidos y Mis reservas, la sección Seguridad
+//     (Cambiar contraseña y Google Authenticator) y "Cerrar sesión".
 // =====================================================================
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -74,6 +76,12 @@ export default function Perfil() {
 
       <Boton texto="Mis pedidos" href="/mis-pedidos" />
       <Boton texto="Mis reservas" href="/reservas" />
+
+      {/* HU-20 y HU-21 · Seguridad de la cuenta */}
+      <Text style={[estilos.etiquetaTarjeta, { marginTop: 24, marginBottom: 0 }]}>SEGURIDAD</Text>
+      <Boton texto="Cambiar contraseña" href="/cambiar-contrasena" variante="secundario" />
+      <Boton texto="Google Authenticator" href="/autenticador" variante="secundario" />
+      <View style={{ marginTop: 24 }} />
       <Boton
         texto="Cerrar sesión"
         variante="secundario"
