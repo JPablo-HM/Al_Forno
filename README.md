@@ -144,6 +144,21 @@ no tienen ruta en la API:
    Presionar `a` para abrir la app en el emulador de Android, o escanear el QR
    con Expo Go.
 
+   **En el emulador de Android usar `npm run emulador`** (desde `app/`) y
+   presionar `a`. Arranca Expo con la dirección `10.0.2.2`, que es como el
+   emulador llama a la computadora. Con `npx expo start` normal, Expo le dice
+   al emulador que descargue la app desde la IP de la red (ej. `192.168.0.10`)
+   y a veces el emulador no la alcanza: Expo Go muestra "Something went wrong"
+   y en "View error log" sale `Failed to download remote update`.
+   En el celular real se sigue usando `npx expo start`.
+
+   Si Expo Go dice que el proyecto es incompatible ("SDK 58"), Expo Go se
+   actualizó solo. Desinstalarlo del emulador y presionar `a` otra vez: Expo
+   instala la versión que corresponde al proyecto (SDK 57). En PowerShell:
+   ```
+   & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" uninstall host.exp.exponent
+   ```
+
    Para instalar librerías nuevas en la app usar `npx expo install <librería>`
    (no `npm install`), así quedan en versiones compatibles con Expo.
 
@@ -181,6 +196,7 @@ no tienen ruta en la API:
    verificación y el código de 6 dígitos. Para varias cuentas con un mismo Gmail se
    usa un alias (`tucorreo+prueba1@gmail.com`, `+prueba2`…) y una cédula distinta en cada una.
 7. **App:** `npx expo start --clear` y escanear el QR con Expo Go.
+   En el emulador: `npm run emulador` y presionar `a`.
 
 Si no hay celular a mano para Google Authenticator, el código se genera en `api/` con
 `node -e "console.log(require('otplib').generateSync({ secret: 'CLAVE' }))"`.

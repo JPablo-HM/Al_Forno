@@ -19,6 +19,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
+    "emulador": "set REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2&& expo start --lan --clear",
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
