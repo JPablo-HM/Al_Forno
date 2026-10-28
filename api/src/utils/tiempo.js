@@ -15,12 +15,6 @@ function ahora() {
   return dayjs().tz(ZONA);
 }
 
-// Día de la semana en numeración ISO, igual que HORARIO en config/restaurante.js:
-// 1 = lunes … 7 = domingo. dayjs usa 0 = domingo, por eso se corrige.
-function diaSemanaIso(momento) {
-  return momento.day() === 0 ? 7 : momento.day();
-}
-
 // '17:00' → '5:00 p.m.' · '12:00' → '12:00 m.d.' · '01:00' → '1:00 a.m.'
 function formatearHora(hora) {
   const [h, m] = hora.split(':').map(Number);
@@ -48,4 +42,4 @@ function formatearFechaLarga(fechaTexto) {
   return `${DIAS[f.day()]} ${f.date()} de ${MESES[f.month()]}`;
 }
 
-module.exports = { ahora, ZONA, diaSemanaIso, formatearHora, segundosDesde, formatearFechaLarga };
+module.exports = { ahora, ZONA, formatearHora, segundosDesde, formatearFechaLarga };

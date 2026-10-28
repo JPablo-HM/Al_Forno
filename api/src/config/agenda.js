@@ -3,13 +3,11 @@
 //
 // La agenda es solo INFORMATIVA y fija: no se compran ni se pagan
 // entradas y el administrador no la edita. Por eso NO está en la base de
-// datos (la tabla agenda y sus procedimientos se quitaron el 22 de
-// octubre de 2026). Si cambia una actividad, se cambia aquí.
+// datos. Si cambia una actividad, se cambia aquí.
 //
 // Cada actividad:
 //   · id:          número único (lo usa la app como key de la lista)
-//   · dias:        días de la semana en que se repite, 1 = lunes … 7 = domingo
-//                  (la misma numeración que HORARIO en config/restaurante.js)
+//   · dias:        los días en que se repite, escritos como se muestran
 //   · nombre:      lo que se muestra como título
 //   · descripcion: texto corto para el cliente
 // El orden de la lista es el orden en que se muestra (de martes a domingo).
@@ -17,25 +15,25 @@
 const AGENDA = [
   {
     id: 1,
-    dias: [2, 3], // martes y miércoles
+    dias: 'Martes y miércoles',
     nombre: 'Noche de karaoke',
     descripcion: 'Elegí tu canción favorita y subí al escenario.',
   },
   {
     id: 2,
-    dias: [4], // jueves
+    dias: 'Jueves',
     nombre: 'DJ en vivo',
     descripcion: 'La mejor música para empezar el fin de semana.',
   },
   {
     id: 3,
-    dias: [5, 6], // viernes y sábado
+    dias: 'Viernes y sábado',
     nombre: 'Música en vivo',
     descripcion: 'Bandas y artistas en vivo para acompañar tu cena.',
   },
   {
     id: 4,
-    dias: [7], // domingo
+    dias: 'Domingo',
     nombre: 'Noche de karaoke',
     descripcion: 'Cerrá la semana cantando con tus amigos.',
   },

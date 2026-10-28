@@ -2,6 +2,7 @@
 const pedidosRepositorio = require('./pedidos.repositorio');
 const { procesarPago } = require('../../utils/simuladorPagos');
 const { segundosDesde } = require('../../utils/tiempo');
+const { errorCon } = require('../../utils/errores');
 
 // Estado del pedido (decisión del proyecto): el administrador ya no cambia
 // estados, así que el estado se CALCULA al leer el pedido, sin tocar la base:
@@ -30,13 +31,6 @@ function armarComprobante({ pedido, productos }) {
     ...calcularEstado(pedido.fecha),
     productos, // [{ nombre, cantidad, precio_unitario, subtotal }]
   };
-}
-
-// Crea un error con el estado HTTP que verá la app.
-function errorCon(status, mensaje) {
-  const error = new Error(mensaje);
-  error.status = status;
-  return error;
 }
 
 // ★ HU-07 / HU-08 · Pagar y crear el pedido.

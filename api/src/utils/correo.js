@@ -100,4 +100,4 @@ function avisarCambioContrasena(para, nombre) {
   );
 }
 
-module.exports = { enviarVerificacion, enviarCodigo, avisarCambioContrasena, modoPrueba };
+module.exports = { enviarVerificacion, enviarCodigo, avisarCambioContrasena };

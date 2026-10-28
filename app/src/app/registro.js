@@ -114,12 +114,11 @@ export default function Registro() {
       const resultado = await registrar({ ...form, respuestas });
       setEnviado(resultado); // cambia a la vista "Revisá tu correo"
     } catch (e) {
-      // Si la API dice qué campo falló, se marca ese campo;
-      // si no (ej. sin conexión), se muestra arriba.
+      // Si la API dice qué campo falló (error 400), se marca ese campo.
+      // Si no (ej. "Ese correo ya está registrado" o sin conexión), el
+      // mensaje se muestra junto al botón.
       if (e.campo?.startsWith('respuestas')) setErrores({ respuestas: e.message });
       else if (e.campo) setErrores({ [e.campo]: e.message });
-      else if (e.message.includes('correo')) setErrores({ correo: e.message });
-      else if (e.message.includes('cédula')) setErrores({ cedula: e.message });
       else setErrorGeneral(e.message);
     } finally {
       setEnviando(false);
@@ -164,8 +163,6 @@ export default function Registro() {
     >
       <Text style={estilos.titulo}>Crear cuenta</Text>
       <Text style={estilos.subtitulo}>Tus datos quedan guardados para tus pedidos y reservas.</Text>
-
-      {errorGeneral ? <Aviso texto={errorGeneral} /> : null}
 
       <CampoFormulario
         etiqueta="NOMBRE COMPLETO"
@@ -254,6 +251,9 @@ export default function Registro() {
         />
       ))}
       {errores.respuestas ? <Text style={estilos.error}>{errores.respuestas}</Text> : null}
+
+      {/* Errores generales (correo o cédula repetidos, sin conexión) junto al botón, donde el cliente los ve */}
+      {errorGeneral ? <Aviso texto={errorGeneral} /> : null}
 
       <View style={{ marginTop: 18 }}>
         <Boton texto={enviando ? 'Creando…' : 'Crear cuenta'} onPress={alCrearCuenta} deshabilitado={!puedeEnviar} />

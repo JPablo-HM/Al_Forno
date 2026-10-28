@@ -17,10 +17,10 @@ const seguridad = require('./seguridad.servicio');
 const { cifrar, hashCedula, hashCodigo, generarCodigo, generarTokenLink } = require('../../utils/cifrado');
 const correo = require('../../utils/correo');
 const {
-  POLITICA_CONTRASENA, MINUTOS_LINK_VERIFICACION, MINUTOS_CODIGO_CORREO,
+  MINUTOS_LINK_VERIFICACION, MINUTOS_CODIGO_CORREO,
 } = require('../../config/seguridad');
 
-const { errorCon } = seguridad;
+const { errorCon } = require('../../utils/errores');
 const MENSAJE_DATOS_INCORRECTOS = 'Correo o contraseña incorrectos';
 
 // ---------------------------------------------------------------------
@@ -30,13 +30,6 @@ const MENSAJE_DATOS_INCORRECTOS = 'Correo o contraseña incorrectos';
 // HU-01 · Las preguntas para elegir 3
 function listarPreguntas() {
   return authRepositorio.listarPreguntas();
-}
-
-// HU-20 · La política, para que la app muestre la lista con ✓ usando
-// EXACTAMENTE las mismas reglas que revisa la API.
-// patron: la expresión regular en texto (la app hace new RegExp(patron)).
-function obtenerPolitica() {
-  return POLITICA_CONTRASENA.map((p) => ({ texto: p.texto, patron: p.regla.source }));
 }
 
 // ---------------------------------------------------------------------
@@ -215,7 +208,6 @@ async function cambiarContrasenaVencida(pase, contrasenaNueva, req) {
 
 module.exports = {
   listarPreguntas,
-  obtenerPolitica,
   registrar,
   verificarCorreo,
   reenviarVerificacion,

@@ -18,12 +18,6 @@ router.get('/preguntas', async (req, res) => {
   res.json(await authServicio.listarPreguntas());
 });
 
-// GET /api/auth/politica (HU-20) · Público · Reglas de la contraseña
-// para que la app muestre la lista con ✓ mientras se escribe.
-router.get('/politica', (req, res) => {
-  res.json(authServicio.obtenerPolitica());
-});
-
 // POST /api/auth/registro (HU-01) · Público
 // Cuerpo: { nombre_completo, cedula, telefono, correo, contrasena, confirmacion,
 //           respuestas: [{ pregunta_id, respuesta }, ×3] }

@@ -10,15 +10,15 @@
 --  DÓNDE VIVE CADA REGLA (cada regla en un solo lugar)
 --    · API · validación (express-validator): formato de los datos.
 --    · API · middleware: si es cliente o administrador.
---    · API · services: reglas del negocio (horario, fechas, estado del
---      pedido calculado por tiempo...).
+--    · API · services: reglas del negocio (fechas, horas de reserva,
+--      estado del pedido calculado por tiempo...).
 --    · Procedimientos (este archivo): leer y guardar datos. Casi todos
 --      son UNA sola consulta. Solo cuatro tienen más lógica:
 --        ★ sp_CrearPedido  → transacción: el pedido y sus productos se
 --                             guardan juntos, o no se guarda nada.
 --        ★ sp_CrearReserva → candado: si dos clientes reservan al mismo
 --                             tiempo, el segundo espera su turno, así
---                             nunca hay más de 3 reservas por hora.
+--                             nunca se pasa del máximo por hora.
 --        ★ sp_RegistrarUsuario  → transacción: el usuario, sus 3
 --                             respuestas de seguridad y su primera
 --                             contraseña se guardan juntos.
@@ -211,7 +211,6 @@ DROP PROCEDURE IF EXISTS sp_ActivarUsuario $$
 CREATE PROCEDURE sp_ActivarUsuario(IN p_id INT UNSIGNED)
 BEGIN
   UPDATE usuario SET estado = 'ACTIVO' WHERE id = p_id;
-  CALL sp_ObtenerUsuario(p_id);
 END $$
 
 
@@ -311,8 +310,6 @@ BEGIN
     VALUES (p_id, p_contrasena_hash);
 
   COMMIT;
-
-  CALL sp_ObtenerUsuario(p_id);
 END $$
 
 
@@ -333,7 +330,6 @@ BEGIN
      SET authenticator_secreto = p_secreto_cifrado,
          authenticator_activo  = FALSE
    WHERE id = p_id;
-  CALL sp_ObtenerUsuario(p_id);
 END $$
 
 -- Paso 2: el primer código fue correcto, queda vinculado
@@ -343,7 +339,6 @@ BEGIN
   UPDATE usuario
      SET authenticator_activo = TRUE
    WHERE id = p_id AND authenticator_secreto IS NOT NULL;
-  CALL sp_ObtenerUsuario(p_id);
 END $$
 
 -- Desvincular: se borra la clave
@@ -354,7 +349,6 @@ BEGIN
      SET authenticator_secreto = NULL,
          authenticator_activo  = FALSE
    WHERE id = p_id;
-  CALL sp_ObtenerUsuario(p_id);
 END $$
 
 -- La clave cifrada, para que la API valide el código de 6 dígitos
@@ -493,7 +487,7 @@ END $$
 
 
 -- =====================================================================
---  PEDIDOS  (HU-07, HU-08, HU-09, HU-16)
+--  PEDIDOS  (HU-07, HU-08, HU-09)
 -- =====================================================================
 
 -- ★ HU-07 / HU-08 · Crea un pedido ya pagado.
@@ -560,19 +554,19 @@ BEGIN
   CALL sp_ObtenerPedido(v_pedido_id, p_usuario_id);
 END $$
 
--- HU-08 / HU-09 / HU-16 · Un pedido con sus productos (comprobante y detalle).
--- p_usuario_id = el cliente (solo ve los suyos) · NULL = administrador.
+-- HU-08 / HU-09 · Un pedido con sus productos (comprobante y detalle).
+-- p_usuario_id = el cliente: solo ve sus propios pedidos.
 -- Devuelve DOS resultados: 1) datos del pedido  2) sus productos.
 DROP PROCEDURE IF EXISTS sp_ObtenerPedido $$
 CREATE PROCEDURE sp_ObtenerPedido(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
 BEGIN
   -- El estado no se guarda: la API lo calcula con la fecha del pedido.
   SELECT pe.id, pe.total, pe.tarjeta_ultimos4, pe.fecha,
-         u.nombre_completo AS cliente, u.telefono
+         u.nombre_completo AS cliente
     FROM pedido pe
     JOIN usuario u ON u.id = pe.usuario_id
    WHERE pe.id = p_id
-     AND (p_usuario_id IS NULL OR pe.usuario_id = p_usuario_id);
+     AND pe.usuario_id = p_usuario_id;
 
   -- El nombre sale del producto actual; el precio es el que se pagó
   SELECT pr.nombre, d.cantidad, d.precio_unitario,
@@ -581,7 +575,7 @@ BEGIN
     JOIN pedido pe  ON pe.id = d.pedido_id
     JOIN producto pr ON pr.id = d.producto_id
    WHERE d.pedido_id = p_id
-     AND (p_usuario_id IS NULL OR pe.usuario_id = p_usuario_id);
+     AND pe.usuario_id = p_usuario_id;
 END $$
 
 -- HU-09 · Mis pedidos (del más reciente al más antiguo)
@@ -595,25 +589,27 @@ BEGIN
 END $$
 
 -- =====================================================================
---  RESERVAS  (HU-10, HU-11, HU-18)
+--  RESERVAS  (HU-10, HU-11)
 -- =====================================================================
 
 -- ★ HU-10 · Crear una reserva.
--- Antes de llamarlo, la API valida: no fechas pasadas, no lunes, máximo
--- 30 días, hora exacta dentro del horario y de 1 a 8 personas.
+-- Antes de llamarlo, la API valida: no fechas pasadas, máximo 30 días,
+-- una de las horas que se ofrecen (12:00 a 22:00) y de 1 a 8 personas.
 -- Aquí se controla lo que depende de las otras reservas:
---   · máximo 3 reservas confirmadas por hora
+--   · máximo p_maximo reservas confirmadas por hora (el número lo manda
+--     la API: MAXIMO_POR_HORA en reservas.servicio.js)
 --   · 1 reserva confirmada por día por cliente
 -- CANDADO: GET_LOCK pide un "candado" con el nombre de la fecha. Si dos
 -- clientes reservan para el mismo día al mismo tiempo, el segundo espera
 -- (máximo 10 segundos) a que el primero termine. Así los dos no pueden
--- contar "2 reservas" a la vez y guardar la cuarta.
+-- contar las reservas a la vez y pasarse del máximo.
 DROP PROCEDURE IF EXISTS sp_CrearReserva $$
 CREATE PROCEDURE sp_CrearReserva(
   IN p_usuario_id INT UNSIGNED,
   IN p_fecha      DATE,
   IN p_hora       TIME,
-  IN p_personas   TINYINT UNSIGNED
+  IN p_personas   TINYINT UNSIGNED,
+  IN p_maximo     TINYINT UNSIGNED
 )
 BEGIN
   DECLARE v_candado  VARCHAR(40) DEFAULT CONCAT('al_forno_reserva_', p_fecha);
@@ -639,14 +635,14 @@ BEGIN
       MESSAGE_TEXT = 'Ya tiene una reserva para ese día';
   END IF;
 
-  -- 3. HU-10: máximo 3 reservas confirmadas por hora
+  -- 3. HU-10: máximo p_maximo reservas confirmadas por hora
   SELECT COUNT(*) INTO v_ocupadas
     FROM reserva
    WHERE fecha = p_fecha AND hora = p_hora AND estado = 'Confirmada';
 
-  IF v_ocupadas >= 3 THEN
+  IF v_ocupadas >= p_maximo THEN
     SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409,
-      MESSAGE_TEXT = 'Sin espacio: esa hora ya tiene 3 reservas. Escoja otra hora';
+      MESSAGE_TEXT = 'Sin espacio: esa hora ya está llena. Escoja otra hora';
   END IF;
 
   -- 4. Guarda la reserva y suelta el candado
@@ -659,9 +655,9 @@ BEGIN
   CALL sp_ObtenerReserva(LAST_INSERT_ID(), p_usuario_id);
 END $$
 
--- HU-10 / HU-18 · Reservas confirmadas por hora en una fecha.
--- La API arma las horas del día según el horario y marca "Sin espacio"
--- donde ocupadas = 3. Las horas sin reservas no aparecen (tienen 0).
+-- HU-10 · Reservas confirmadas por hora en una fecha.
+-- La API arma las horas del día y marca "Sin espacio" donde ya se llegó
+-- al máximo. Las horas sin reservas no aparecen (tienen 0).
 DROP PROCEDURE IF EXISTS sp_ListarOcupacion $$
 CREATE PROCEDURE sp_ListarOcupacion(IN p_fecha DATE)
 BEGIN
@@ -672,14 +668,14 @@ BEGIN
    ORDER BY hora;
 END $$
 
--- HU-10 / HU-11 · Una reserva. p_usuario_id = el cliente · NULL = administrador.
+-- HU-10 / HU-11 · Una reserva del cliente (solo ve las suyas).
 DROP PROCEDURE IF EXISTS sp_ObtenerReserva $$
 CREATE PROCEDURE sp_ObtenerReserva(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
 BEGIN
   SELECT id, fecha, hora, personas, estado
     FROM reserva
    WHERE id = p_id
-     AND (p_usuario_id IS NULL OR usuario_id = p_usuario_id);
+     AND usuario_id = p_usuario_id;
 END $$
 
 -- HU-11 · Mis reservas: de hoy en adelante (CURDATE = hoy en Costa Rica)
@@ -692,8 +688,7 @@ BEGIN
    ORDER BY fecha, hora;
 END $$
 
--- HU-11 / HU-18 · Cancelar una reserva CONFIRMADA (el espacio queda libre).
--- p_usuario_id = el cliente (solo las suyas) · NULL = administrador.
+-- HU-11 · Cancelar una reserva CONFIRMADA del cliente (el espacio queda libre).
 -- Devuelve cancelada = 1 si se canceló, 0 si no existe o ya estaba cancelada.
 DROP PROCEDURE IF EXISTS sp_CancelarReserva $$
 CREATE PROCEDURE sp_CancelarReserva(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
@@ -702,7 +697,7 @@ BEGIN
      SET estado = 'Cancelada'
    WHERE id = p_id
      AND estado = 'Confirmada'
-     AND (p_usuario_id IS NULL OR usuario_id = p_usuario_id);
+     AND usuario_id = p_usuario_id;
   SELECT ROW_COUNT() AS cancelada;
 END $$
 

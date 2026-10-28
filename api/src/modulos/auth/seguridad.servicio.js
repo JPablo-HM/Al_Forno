@@ -22,16 +22,9 @@ const {
   TOLERANCIA_AUTENTICADOR_SEG, MINUTOS_PASE,
 } = require('../../config/seguridad');
 
-const RONDAS_BCRYPT = 10; // cuántas veces se mezcla: más = más lento de adivinar
+const { errorCon } = require('../../utils/errores');
 
-// Crea un error con estado HTTP. datos: campos extra para la app
-// (ej. { segundos: 45 } en el bloqueo).
-function errorCon(status, mensaje, datos) {
-  const error = new Error(mensaje);
-  error.status = status;
-  if (datos) error.datos = datos;
-  return error;
-}
+const RONDAS_BCRYPT = 10; // cuántas veces se mezcla: más = más lento de adivinar
 
 // ---------------------------------------------------------------------
 // Sesión y pase temporal
@@ -217,7 +210,6 @@ async function auditar(req, usuario, actividad, resultado, correoEscrito) {
 }
 
 module.exports = {
-  errorCon,
   crearSesion,
   crearPase,
   datosPublicos,

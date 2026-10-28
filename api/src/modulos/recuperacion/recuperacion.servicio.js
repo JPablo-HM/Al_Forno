@@ -12,7 +12,7 @@ const authRepositorio = require('../auth/auth.repositorio');
 const seguridad = require('../auth/seguridad.servicio');
 const correo = require('../../utils/correo');
 
-const { errorCon } = seguridad;
+const { errorCon } = require('../../utils/errores');
 
 // Paso 1 · ¿Existe una cuenta de cliente activa con ese correo?
 async function iniciar(correoEscrito) {

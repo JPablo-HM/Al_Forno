@@ -1,31 +1,23 @@
 // Botón de la app. Con "href" navega a esa pantalla.
-// Con "requiereSesion", si no hay sesión lleva a Iniciar sesión
-// (regla del mapa de navegación).
 import { Pressable, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSesion } from '../context/SesionContext';
 import { COLORES } from '../config/config';
 
 // Props (datos que recibe el botón):
 //   texto          → lo que dice el botón
 //   href           → ruta a la que navega, ej. '/carrito'
 //   onPress        → función propia; si se pasa, tiene prioridad sobre href
-//   requiereSesion → si no hay sesión, manda a /login en lugar de href
 //   variante       → 'primario' (relleno terracota) o 'secundario' (solo borde)
 //   deshabilitado  → true: se ve tenue y no se puede tocar (ej. mientras
 //                    espera a la API o si la contraseña no cumple la política)
-// Uso: <Boton texto="Ver carrito" href="/carrito" requiereSesion />
-export default function Boton({ texto, href, onPress, requiereSesion = false, variante = 'primario', deshabilitado = false }) {
+// Uso: <Boton texto="Ver carrito" href="/carrito" />
+export default function Boton({ texto, href, onPress, variante = 'primario', deshabilitado = false }) {
   const router = useRouter();
-  const { usuario } = useSesion();
-
   // Decide qué hacer al tocar, en este orden de prioridad:
   function alTocar() {
     // 1. Si tiene una acción propia, la ejecuta.
     if (onPress) return onPress();
-    // 2. Si la pantalla pide sesión y es visitante, lo manda a Iniciar sesión.
-    if (requiereSesion && !usuario) return router.push('/login');
-    // 3. Si no, navega a la ruta indicada. push = pone la pantalla encima.
+    // 2. Si no, navega a la ruta indicada. push = pone la pantalla encima.
     if (href) router.push(href);
   }
 

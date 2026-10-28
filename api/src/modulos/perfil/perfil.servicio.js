@@ -10,7 +10,7 @@ const { cifrar, descifrar } = require('../../utils/cifrado');
 const correo = require('../../utils/correo');
 const { EMISOR_AUTENTICADOR } = require('../../config/seguridad');
 
-const { errorCon } = seguridad;
+const { errorCon } = require('../../utils/errores');
 
 async function obtenerUsuarioOFallar(id) {
   const usuario = await authRepositorio.obtenerUsuario(id);

@@ -31,7 +31,7 @@ router.use(require('./salud/salud.rutas'));
 // Módulo Información (pantalla Inicio): GET /api/horario, /api/restaurante, /api/promociones
 router.use(require('./informacion/informacion.rutas'));
 
-// Módulo Cuenta (HU-01, HU-02, HU-20, HU-21): GET /api/auth/preguntas, GET /api/auth/politica,
+// Módulo Cuenta (HU-01, HU-02, HU-20, HU-21): GET /api/auth/preguntas,
 // POST /api/auth/registro, GET /api/auth/verificar, POST /api/auth/reenviar-verificacion,
 // POST /api/auth/login, POST /api/auth/login/enviar-codigo, POST /api/auth/login/verificar,
 // POST /api/auth/login/cambiar-contrasena

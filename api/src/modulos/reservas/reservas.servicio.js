@@ -5,26 +5,22 @@
 // Reglas que sí se aplican aquí:
 //   · fecha desde hoy y hasta 30 días después
 //   · la hora debe ser una de HORAS_RESERVA y, si es hoy, que no haya pasado
-// Reglas que aplica la base (sp_CrearReserva):
-//   · máximo 3 reservas por hora · 1 reserva por día por cliente
+// Reglas que aplica la base (sp_CrearReserva), porque dependen de las otras reservas:
+//   · máximo MAXIMO_POR_HORA reservas por hora (la API le pasa el número)
+//   · 1 reserva por día por cliente
 // La cantidad de personas (1 a 8) la valida la ruta.
 //
 // El motivo y el comentario se quitaron de la app y de la base (decisión del proyecto).
 const reservasRepositorio = require('./reservas.repositorio');
 const { ahora, ZONA, formatearHora, formatearFechaLarga } = require('../../utils/tiempo');
 const dayjs = require('dayjs');
+const { errorCon } = require('../../utils/errores');
 
 // Horas que se ofrecen cada día: de 12:00 m.d. a 10:00 p.m.
 const HORAS_RESERVA = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
   '18:00', '19:00', '20:00', '21:00', '22:00'];
-const MAXIMO_POR_HORA = 3;
+const MAXIMO_POR_HORA = 3; // única definición: también se le pasa a sp_CrearReserva
 const DIAS_ANTICIPACION = 30;
-
-function errorCon(status, mensaje) {
-  const error = new Error(mensaje);
-  error.status = status;
-  return error;
-}
 
 // Revisa la fecha ('YYYY-MM-DD'): desde hoy y hasta 30 días.
 function validarFecha(fecha) {
@@ -79,7 +75,7 @@ async function crearReserva(usuarioId, datos) {
   if (!HORAS_RESERVA.includes(datos.hora)) throw errorCon(400, 'Escoge una de las horas disponibles');
   if (yaPaso(datos.fecha, datos.hora)) throw errorCon(400, 'Esa hora ya pasó. Escoge otra');
 
-  const reserva = await reservasRepositorio.crearReserva(usuarioId, datos);
+  const reserva = await reservasRepositorio.crearReserva(usuarioId, datos, MAXIMO_POR_HORA);
   return armarReserva(reserva);
 }
 
@@ -96,4 +92,4 @@ async function cancelarReserva(id, usuarioId) {
   return { id, estado: 'Cancelada' };
 }
 
-module.exports = { listarHoras, crearReserva, listarMisReservas, cancelarReserva, HORAS_RESERVA };
+module.exports = { listarHoras, crearReserva, listarMisReservas, cancelarReserva };
