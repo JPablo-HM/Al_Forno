@@ -23,7 +23,8 @@ al_forno/
  │       │                (restaurante.js, agenda.js) y reglas de seguridad (seguridad.js)
  │       ├─ middlewares/  Sesión y roles (autenticacion.js), validación (validar.js,
  │       │                reglasCuenta.js) y manejo central de errores (errores.js)
- │       └─ utils/        Hora de Costa Rica, cifrado AES y envío de correos
+ │       └─ utils/        Hora de Costa Rica, cifrado AES, envío de correos y errorCon
+ │                        (errores.js: crea los errores con su código HTTP)
  └─ database/   Scripts SQL (tablas, procedimientos, datos iniciales)
 ```
 
@@ -50,7 +51,7 @@ basta abrir su carpeta en `api/src/modulos/`. Los módulos `recuperacion` y
 | Recuperar contraseña | Correo → 3 preguntas o código de Google Authenticator → contraseña nueva. Se avisa por correo | HU-22 |
 | Google Authenticator | Opcional, desde el Perfil. Se vincula copiando la clave (sin QR) y confirmando el primer código | HU-21 |
 | Datos sensibles | Contraseñas y respuestas con bcrypt; cédula, teléfono y clave de Authenticator cifrados con AES-256-GCM; códigos con hash SHA-256; la sesión de la app solo vive en memoria | HU-23 |
-| Auditoría | Tabla `auditoria`: registro, logins exitosos y fallidos, bloqueos, cambios y recuperaciones de contraseña. Se consulta en la base | HU-24 |
+| Auditoría | Tabla `auditoria`: registro, logins exitosos y fallidos, bloqueos, cambios y recuperaciones de contraseña. Se consulta en la base (ver "Consultar la bitácora") | HU-24 |
 
 Entre un paso y otro del login y de la recuperación, la API entrega un **pase**:
 un token temporal (10 minutos) que solo sirve para el paso siguiente.
@@ -131,7 +132,7 @@ no tienen ruta en la API:
      correos y muestra el link de verificación y los códigos en su terminal.
    - `URL_PUBLICA`: dirección que va en el link del correo. Con `http://localhost:3000`
      el link se abre en el navegador de la computadora; para abrirlo en el celular,
-     poner la IP de la computadora (ej. `http://192.168.1.25:3000`).
+     poner la IP de la computadora (ej. `http://192.168.1.25:3000`). Ver "Antes de la defensa".
 
    El archivo `.env` nunca se sube a git. Probar en el navegador: http://localhost:3000/api/salud
 3. **App:**
@@ -161,6 +162,167 @@ no tienen ruta en la API:
 
 **Usuario administrador** (creado por `03_datos_iniciales.sql`):
 `admin@alforno.cr` / `Cambiar.AlForno2026`.
+
+## Antes de la defensa
+
+1. **Red:** conectar la computadora y el celular al **hotspot del celular**. La red de
+   la U puede aislar los dispositivos entre sí o bloquear el envío de correos.
+2. **IP de la computadora:** en la terminal, `ipconfig` → "Dirección IPv4" del
+   adaptador Wi-Fi. Ponerla en `api/.env`: `URL_PUBLICA=http://<IP>:3000`.
+3. **Reiniciar la API** (`Ctrl+C` y `npm run dev`): `--watch` no vuelve a leer el `.env`.
+4. **MySQL encendido** y probar desde el navegador del celular `http://<IP>:3000/api/salud`.
+5. **AVG:** Protección básica → Escudo de correo → "Analizar correos salientes (SMTP)"
+   debe estar **desmarcado** (si no, falla el correo con `SELF_SIGNED_CERT_IN_CHAIN`).
+   Para revisarlo, en `api/` (debe decir *Google Trust Services*):
+   ```
+   node -e "const t=require('tls').connect(465,'smtp.gmail.com',{rejectUnauthorized:false},()=>{let c=t.getPeerCertificate(true);while(c){console.log(c.issuer.O||c.issuer.CN);if(c.issuerCertificate===c)break;c=c.issuerCertificate}t.end()})"
+   ```
+6. **Prueba de correo:** crear una cuenta y revisar que llegan el link de
+   verificación y el código de 6 dígitos. Para varias cuentas con un mismo Gmail se
+   usa un alias (`tucorreo+prueba1@gmail.com`, `+prueba2`…) y una cédula distinta en cada una.
+7. **App:** `npx expo start --clear` y escanear el QR con Expo Go.
+
+Si no hay celular a mano para Google Authenticator, el código se genera en `api/` con
+`node -e "console.log(require('otplib').generateSync({ secret: 'CLAVE' }))"`.
+
+## Consultar la bitácora (tabla `auditoria`, HU-24)
+
+En MySQL Workbench (primero `USE al_forno;` o doble clic en el schema):
+
+```sql
+-- Últimas 50 actividades
+SELECT id, fecha, hora, correo, actividad, resultado, ip, dispositivo
+FROM auditoria ORDER BY id DESC LIMIT 50;
+
+-- Solo lo de hoy
+SELECT fecha, hora, correo, actividad, resultado
+FROM auditoria WHERE fecha = CURRENT_DATE ORDER BY hora DESC;
+
+-- Intentos fallidos y bloqueos
+SELECT fecha, hora, correo, actividad, ip
+FROM auditoria WHERE actividad IN ('LOGIN_FALLIDO', 'BLOQUEO') ORDER BY id DESC;
+
+-- Todo lo de un cliente
+SELECT fecha, hora, actividad, resultado, ip
+FROM auditoria WHERE correo = 'cliente@correo.com' ORDER BY id DESC;
+
+-- Resumen: cuántas veces pasó cada actividad
+SELECT actividad, resultado, COUNT(*) AS veces
+FROM auditoria GROUP BY actividad, resultado ORDER BY actividad, resultado;
+```
+
+Actividades posibles: `REGISTRO`, `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `BLOQUEO`,
+`CAMBIO_CONTRASENA`, `RECUPERACION`; resultado: `EXITO` o `FALLO`. `usuario_id` queda
+en `NULL` cuando se escribió un correo que no existe.
+
+## Mapa de navegación
+
+GitHub dibuja estos diagramas. Las mismas imágenes están en `Doc/` (fuera de git):
+`Mapa_navegacion_cliente.png` y `Mapa_navegacion_admin.png`.
+
+Colores: **terracota** = pestañas del menú inferior; **crema** = pantallas que se abren
+encima; **negro** = entradas y salidas. Línea punteada = pasa solo si no hay sesión;
+línea gruesa = a dónde lleva la app sola después de iniciar sesión.
+
+### Visitante y cliente
+
+```mermaid
+flowchart TD
+  ABRIR([Abrir la app]) --> INICIO
+  CORREO([Link del correo de registro<br/>se abre en el navegador]) -. activa la cuenta .-> LOGIN
+
+  subgraph TABS["Menú inferior · visitante y cliente"]
+    INICIO[Inicio<br/>horario · ubicación · promociones]
+    MENU[Menú]
+    AGENDA[Agenda]
+    RESERVAS[Reservas<br/>= Mis reservas]
+    PERFIL[Perfil]
+  end
+
+  subgraph SIN["Solo sin sesión"]
+    LOGIN[Iniciar sesión<br/>1 correo y contraseña<br/>2 método · 3 código<br/>4 contraseña vencida]
+    REGISTRO[Crear cuenta<br/>datos + 3 preguntas]
+    RECUPERAR[Recuperar contraseña<br/>1 correo · 2 preguntas o<br/>Authenticator · 3 nueva]
+  end
+
+  subgraph CLI["Solo cliente con sesión"]
+    CARRITO[Carrito] --> RESUMEN[Resumen del pedido] --> PAGO[Pago]
+    MISPED[Mis pedidos] --> PEDIDO[Pedido y comprobante]
+    NUEVA[Nueva reserva]
+    CAMBIAR[Cambiar contraseña]
+    AUTH[Google Authenticator]
+  end
+
+  INICIO -- Ver menú --> MENU
+  MENU -- ícono carrito --> CARRITO
+  MENU -. Agregar o carrito sin sesión .-> LOGIN
+  PAGO -- pago aprobado --> PEDIDO
+  RESERVAS -- Nueva reserva --> NUEVA
+  NUEVA -- Ver mis reservas --> RESERVAS
+  RESERVAS -. sin sesión .-> LOGIN
+  PERFIL -. sin sesión .-> LOGIN
+  PERFIL -. sin sesión .-> REGISTRO
+  PERFIL --> MISPED
+  PERFIL -- Mis reservas --> RESERVAS
+  PERFIL -- Seguridad --> CAMBIAR
+  PERFIL -- Seguridad --> AUTH
+  PERFIL -- Cerrar sesión --> INICIO
+  LOGIN -- ¿Olvidaste tu contraseña? --> RECUPERAR
+  LOGIN -- Crear cuenta --> REGISTRO
+  REGISTRO -- Ir a iniciar sesión --> LOGIN
+  RECUPERAR -- Ir a iniciar sesión --> LOGIN
+  LOGIN == cliente ==> INICIO
+  LOGIN == administrador ==> ADMIN([Panel del administrador])
+  classDef pestana fill:#b0512f,stroke:#8a3c21,color:#fbf6ee
+  classDef pantalla fill:#fbf6ee,stroke:#b0512f,color:#1c1815
+  classDef externo fill:#141110,stroke:#141110,color:#f4ece0
+  class INICIO,MENU,AGENDA,RESERVAS,PERFIL pestana
+  class LOGIN,REGISTRO,RECUPERAR,CARRITO,RESUMEN,PAGO,MISPED,PEDIDO,NUEVA,CAMBIAR,AUTH pantalla
+  class ABRIR,CORREO,ADMIN externo
+```
+
+### Administrador (pantallas en pausa: plantillas)
+
+```mermaid
+flowchart TD
+  LOGIN([Iniciar sesión<br/>correo y contraseña]) ==> PMENU
+
+  subgraph ATABS["Menú inferior del administrador"]
+    PMENU[Menú<br/>productos]
+    PPROMO[Promociones]
+    PMAS[Más]
+  end
+
+  PMENU -- Nuevo producto --> PROD[Producto<br/>nuevo o editar]
+  PMENU -- Editar --> PROD
+  PPROMO -- Nueva promoción --> PROMO[Promoción<br/>nueva o editar]
+  PMAS -- Cerrar sesión --> INICIO([Inicio de la app de clientes])
+  classDef pestana fill:#b0512f,stroke:#8a3c21,color:#fbf6ee
+  classDef pantalla fill:#fbf6ee,stroke:#b0512f,color:#1c1815
+  classDef externo fill:#141110,stroke:#141110,color:#f4ece0
+  class PMENU,PPROMO,PMAS pestana
+  class PROD,PROMO pantalla
+  class LOGIN,INICIO externo
+```
+
+Notas del mapa:
+
+- **Quién ve qué** lo decide `app/src/app/_layout.js` con `Stack.Protected`: el visitante
+  y el cliente ven el menú inferior; Iniciar sesión, Crear cuenta y Recuperar solo
+  aparecen sin sesión; carrito, pago, pedidos, nueva reserva y Seguridad piden sesión de
+  cliente; el panel `/admin` es solo del administrador, que no ve la app de clientes.
+- **Nadie navega "a mano" después del login ni al cerrar sesión:** al cambiar la sesión,
+  Expo Router lleva a la primera pantalla permitida (Inicio para el cliente, el panel
+  para el administrador).
+- **Botones que piden sesión** (Agregar en el Menú, ícono del carrito): sin sesión abren
+  Iniciar sesión (`components/Boton.js`, `BotonCarrito.js`, `TarjetaProducto.js`).
+- **Pago aprobado:** cierra Carrito, Resumen y Pago (`dismissAll`) y abre el comprobante;
+  la flecha "atrás" ya no vuelve al pago.
+- **Iniciar sesión y Recuperar contraseña** son una sola pantalla cada una, con pasos.
+  El administrador termina en el paso 1 (sin doble factor).
+- **Perfil y Reservas** tienen dos versiones: sin sesión invitan a iniciar sesión o
+  crear cuenta; con sesión muestran los datos del cliente.
+- La seguridad real no está en la navegación: la API revisa el token y el rol en cada petición.
 
 ## Navegación de la app (Expo Router)
 
