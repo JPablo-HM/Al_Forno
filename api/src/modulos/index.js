@@ -17,7 +17,7 @@ const router = Router();
 // recuperación): máximo 50 envíos (POST) cada 15 minutos desde la misma
 // IP. Es una capa más contra quien intente adivinar contraseñas o
 // códigos, aparte del bloqueo de 1 minuto por cuenta (HU-02).
-// Las consultas (GET: preguntas, política, link del correo) no cuentan.
+// Las consultas (GET: preguntas de seguridad, link del correo) no cuentan.
 const limiteCuenta = rateLimit({
   windowMs: LIMITE_PETICIONES.minutos * 60 * 1000,
   limit: LIMITE_PETICIONES.maximo,
