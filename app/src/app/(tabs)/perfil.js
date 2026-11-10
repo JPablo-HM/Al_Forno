@@ -69,6 +69,14 @@ export default function Perfil() {
             <Text style={estilos.nombre}>{perfil.nombre_completo}</Text>
             <Dato icono="card-outline" etiqueta="Cédula" valor={perfil.cedula} />
             <Dato icono="call-outline" etiqueta="Teléfono" valor={perfil.telefono} />
+            {/* HU-01 · Ubicación (el administrador no tiene) */}
+            {perfil.pais ? (
+              <Dato
+                icono="location-outline"
+                etiqueta="Ubicación"
+                valor={`${perfil.canton}, ${perfil.provincia}, ${perfil.pais}`}
+              />
+            ) : null}
             <Dato icono="mail-outline" etiqueta="Correo" valor={perfil.correo} />
           </>
         ) : null}

@@ -12,8 +12,8 @@ import { pedir } from './api';
 export const obtenerPreguntas = () => pedir('/auth/preguntas');
 
 // HU-01 · Crear cuenta → POST /api/auth/registro
-// datos = { nombre_completo, cedula, telefono, correo, contrasena, confirmacion,
-//           respuestas: [{ pregunta_id, respuesta }, ×3] }
+// datos = { nombre_completo, cedula, telefono, canton_id, correo, contrasena,
+//           confirmacion, respuestas: [{ pregunta_id, respuesta }, ×3] }
 // Devuelve { correo, mensaje }. NO inicia sesión: primero hay que
 // confirmar el correo con el link que envía la API.
 export const registrar = (datos) => pedir('/auth/registro', { metodo: 'POST', cuerpo: datos });

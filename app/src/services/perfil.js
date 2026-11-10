@@ -3,7 +3,8 @@
 import { pedir } from './api';
 
 // Perfil completo → GET /api/perfil
-// Devuelve { id, rol, nombre_completo, cedula, telefono, correo, authenticator_activo }
+// Devuelve { id, rol, nombre_completo, cedula, telefono, correo, pais, provincia,
+//            canton, authenticator_activo }
 // La cédula y el teléfono están cifrados en la base; la API los descifra (HU-23).
 export const obtenerPerfil = (token) => pedir('/perfil', { token });
 

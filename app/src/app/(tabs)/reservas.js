@@ -10,6 +10,8 @@
 //     hora, personas y estado. Las "Confirmada" tienen el botón
 //     "Cancelar", que pide confirmación (HU-11). Se recarga cada vez que
 //     la pestaña aparece (useFocusEffect).
+//   · Cancelar usa actualización optimista: la tarjeta cambia al instante
+//     y la petición va por detrás (fetch); si falla, se deshace.
 // =====================================================================
 import { useCallback, useState } from 'react';
 import { ScrollView, View, Text, Pressable, ActivityIndicator, Alert, StyleSheet } from 'react-native';
@@ -49,12 +51,31 @@ export default function Reservas() {
         {
           text: 'Sí, cancelar',
           style: 'destructive',
-          onPress: () =>
-            cancelarReserva(token, reserva.id)
-              .then(cargar)
-              .catch((e) => Alert.alert('No se pudo cancelar', e.message)),
+          onPress: () => cancelarAlInstante(reserva),
         },
       ]
+    );
+  }
+
+  // Actualización optimista: cambia solo esa tarjeta al instante y
+  // avisa a la API por detrás. Si la API falla, la tarjeta vuelve a como estaba.
+  function cancelarAlInstante(reserva) {
+    // 1. Pantalla: solo esa reserva pasa a "Cancelada"
+    cambiarEstado(reserva.id, 'Cancelada');
+
+    // 2. Servidor: la petición va en segundo plano (fetch)
+    cancelarReserva(token, reserva.id).catch((e) => {
+      // 3. Si falla: se deshace el cambio y se avisa
+      cambiarEstado(reserva.id, reserva.estado);
+      Alert.alert('No se pudo cancelar', e.message);
+    });
+  }
+
+  // Cambia el estado de UNA reserva en la lista que ya está en memoria.
+  // React vuelve a dibujar solo esa tarjeta (la reconoce por su key).
+  function cambiarEstado(id, estado) {
+    setReservas((lista) =>
+      lista.map((r) => (r.id === id ? { ...r, estado } : r))
     );
   }
 
