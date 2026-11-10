@@ -2,14 +2,14 @@
 --  AL FORNO · Base de datos
 --  01_tablas.sql  →  Estructura: tablas y llaves
 --
---  Versión 2.1 · 22 de octubre de 2026 (seguridad de la cuenta)
+--  Versión 2.2 · 9 de noviembre de 2026 (país, provincia y cantón)
 --  Motor: MySQL 8.0 o superior
 --  Basado en: Historias de usuario v2.5
 --
 --  Orden de ejecución:
 --    1. 01_tablas.sql             (este archivo)
 --    2. 02_procedimientos.sql     (procedimientos almacenados)
---    3. 03_datos_iniciales.sql    (administrador, preguntas y menú)
+--    3. 03_datos_iniciales.sql    (administrador, preguntas, ubicaciones y menú)
 --
 --  ⚠ Este script BORRA y vuelve a crear la base al_forno.
 --    Úselo solo en desarrollo o en una instalación nueva.
@@ -17,7 +17,11 @@
 
 -- ---------------------------------------------------------------------
 --  DECISIONES DE DISEÑO (versión 2.0)
---  · 11 tablas: solo lo que piden las historias de usuario.
+--  · 14 tablas: solo lo que piden las historias de usuario.
+--  · 9 nov 2026 (v2.2): ubicación del cliente en el registro (HU-01).
+--    3 tablas nuevas en cascada: pais → provincia → canton, y la columna
+--    usuario.canton_id. Con el cantón se sabe la provincia y el país, así
+--    que no se guardan los tres en usuario (no se repite el dato).
 --  · 22 oct 2026 (v2.1): seguridad de la cuenta (HU-01, HU-02, HU-20 a
 --    HU-24). Columnas nuevas en usuario y 5 tablas nuevas:
 --    pregunta_seguridad, usuario_respuesta, contrasena_historial, token
@@ -69,7 +73,53 @@ SET time_zone = '-06:00';
 
 
 -- =====================================================================
---  1. USUARIO  (HU-01 Registro, HU-02 Iniciar sesión, HU-14 Administrador,
+--  1. PAIS  (HU-01 Registro: ubicación del cliente)
+--  Las tres tablas de ubicación forman una cascada:
+--    pais  →  provincia  →  canton
+--  Cada provincia pertenece a un país y cada cantón a una provincia.
+--  Se cargan en 03_datos_iniciales.sql; la app solo las lee.
+--  En Panamá y Nicaragua también se usan los nombres "provincia" y
+--  "cantón" (allá son distritos, departamentos y municipios).
+-- =====================================================================
+CREATE TABLE pais (
+  id      TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  nombre  VARCHAR(60)      NOT NULL,
+
+  PRIMARY KEY (id),
+  UNIQUE (nombre)
+);
+
+
+-- =====================================================================
+--  2. PROVINCIA  (HU-01 Registro: ubicación del cliente)
+-- =====================================================================
+CREATE TABLE provincia (
+  id       SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  pais_id  TINYINT UNSIGNED  NOT NULL,
+  nombre   VARCHAR(60)       NOT NULL,
+
+  PRIMARY KEY (id),
+  UNIQUE (pais_id, nombre),                    -- no se repite dentro del mismo país
+  FOREIGN KEY (pais_id) REFERENCES pais (id)
+);
+
+
+-- =====================================================================
+--  3. CANTON  (HU-01 Registro: ubicación del cliente)
+-- =====================================================================
+CREATE TABLE canton (
+  id            SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  provincia_id  SMALLINT UNSIGNED NOT NULL,
+  nombre        VARCHAR(60)       NOT NULL,
+
+  PRIMARY KEY (id),
+  UNIQUE (provincia_id, nombre),               -- no se repite dentro de la misma provincia
+  FOREIGN KEY (provincia_id) REFERENCES provincia (id)
+);
+
+
+-- =====================================================================
+--  4. USUARIO  (HU-01 Registro, HU-02 Iniciar sesión, HU-14 Administrador,
 --               HU-20 Contraseñas, HU-21 Doble factor, HU-23 Datos sensibles)
 --  Clientes y administradores en una sola tabla. El administrador no
 --  tiene cédula ni teléfono (quedan en NULL).
@@ -104,15 +154,19 @@ CREATE TABLE usuario (
   -- HU-21 · Google Authenticator (opcional)
   authenticator_secreto  VARCHAR(200) NULL,      -- clave cifrada con AES; NULL = no vinculado
   authenticator_activo   BOOLEAN      NOT NULL DEFAULT FALSE,  -- TRUE cuando confirmó el primer código
+  -- HU-01 · Ubicación: solo el cantón (de ahí salen la provincia y el país).
+  -- NULL en el administrador; para el cliente es obligatorio (lo valida la API).
+  canton_id              SMALLINT UNSIGNED NULL,
 
   PRIMARY KEY (id),
   UNIQUE (correo),       -- HU-01: no se repite el correo
-  UNIQUE (cedula_hash)   -- HU-01: no se repite la cédula (varios NULL sí se permiten)
+  UNIQUE (cedula_hash),  -- HU-01: no se repite la cédula (varios NULL sí se permiten)
+  FOREIGN KEY (canton_id) REFERENCES canton (id)   -- el cantón debe existir
 );
 
 
 -- =====================================================================
---  2. PRODUCTO  (HU-03 Menú, HU-15 Gestionar menú)
+--  5. PRODUCTO  (HU-03 Menú, HU-15 Gestionar menú)
 -- =====================================================================
 CREATE TABLE producto (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -128,7 +182,7 @@ CREATE TABLE producto (
 
 
 -- =====================================================================
---  3. PROMOCION  (HU-06 Promociones, HU-17 Gestionar promociones)
+--  6. PROMOCION  (HU-06 Promociones, HU-17 Gestionar promociones)
 --  Los días y las fechas de la promoción se escriben en la descripción,
 --  por ejemplo: "Válido martes y jueves hasta el 31 de octubre".
 -- =====================================================================
@@ -143,7 +197,7 @@ CREATE TABLE promocion (
 
 
 -- =====================================================================
---  4. PEDIDO  (HU-07 Pedido, HU-08 Pago, HU-09 Mis pedidos, HU-16 Gestionar)
+--  7. PEDIDO  (HU-07 Pedido, HU-08 Pago, HU-09 Mis pedidos, HU-16 Gestionar)
 -- =====================================================================
 CREATE TABLE pedido (
   id                INT UNSIGNED NOT NULL AUTO_INCREMENT,   -- número de pedido
@@ -172,7 +226,7 @@ CREATE TABLE pedido_detalle (
 
 
 -- =====================================================================
---  5. RESERVA  (HU-10 Reservas, HU-11 Cancelar, HU-18 Gestionar reservas)
+--  8. RESERVA  (HU-10 Reservas, HU-11 Cancelar, HU-18 Gestionar reservas)
 -- =====================================================================
 CREATE TABLE reserva (
   id          INT UNSIGNED     NOT NULL AUTO_INCREMENT,
@@ -190,7 +244,7 @@ CREATE TABLE reserva (
 
 
 -- =====================================================================
---  6. PREGUNTA_SEGURIDAD  (HU-01 Registro, HU-22 Recuperar contraseña)
+--  9. PREGUNTA_SEGURIDAD  (HU-01 Registro, HU-22 Recuperar contraseña)
 --  La lista de preguntas para elegir. Se cargan en 03_datos_iniciales.sql.
 -- =====================================================================
 CREATE TABLE pregunta_seguridad (
@@ -215,7 +269,7 @@ CREATE TABLE usuario_respuesta (
 
 
 -- =====================================================================
---  7. CONTRASENA_HISTORIAL  (HU-20 Política de contraseñas)
+--  10. CONTRASENA_HISTORIAL  (HU-20 Política de contraseñas)
 --  Cada contraseña que ha tenido el cliente (bcrypt), incluida la actual.
 --  La API compara la nueva con las últimas 5 para no repetirlas.
 -- =====================================================================
@@ -231,7 +285,7 @@ CREATE TABLE contrasena_historial (
 
 
 -- =====================================================================
---  8. TOKEN  (HU-01 Verificar correo, HU-21 Doble factor)
+--  11. TOKEN  (HU-01 Verificar correo, HU-21 Doble factor)
 --  Códigos de un solo uso que se envían por correo:
 --    · VERIFICACION  → el link "¿Eres vos?" (vence en 24 horas)
 --    · DOBLE_FACTOR  → el código de 6 dígitos (vence en 2 minutos)
@@ -252,7 +306,7 @@ CREATE TABLE token (
 
 
 -- =====================================================================
---  9. AUDITORIA  (HU-24 Auditoría de accesos)
+--  12. AUDITORIA  (HU-24 Auditoría de accesos)
 --  Historial de la actividad de seguridad de cada cuenta. Solo se
 --  agregan filas: la app no tiene forma de editarlas ni borrarlas.
 --  Nunca guarda contraseñas, respuestas ni códigos.

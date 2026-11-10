@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  03_datos_iniciales.sql  →  Datos con los que arranca el sistema
 --
---  Versión 2.1 · 22 de octubre de 2026 (seguridad de la cuenta)
+--  Versión 2.2 · 9 de noviembre de 2026 (país, provincia y cantón)
 --  Ejecutar después de 01_tablas.sql y 02_procedimientos.sql.
 --
 --  El horario y los datos del restaurante (dirección, teléfono) NO están
@@ -47,6 +47,55 @@ INSERT INTO pregunta_seguridad (texto) VALUES
   ('¿Cuál es el nombre de tu escuela primaria?'),
   ('¿Cómo se llamaba tu mejor amigo de la infancia?'),
   ('¿Cuál es tu comida favorita?');
+
+-- ---------------------------------------------------------------------
+-- 1c. Países, provincias y cantones (HU-01: ubicación en el registro)
+--     3 países · 13 provincias · 40 cantones.
+--     Costa Rica: sus 7 provincias con 4 cantones cada una.
+--     Panamá y Nicaragua: 3 provincias con 2 cantones cada una.
+--     Los id de país y provincia se escriben a mano para que se lea a
+--     cuál pertenece cada fila.
+-- ---------------------------------------------------------------------
+INSERT INTO pais (id, nombre) VALUES
+  (1, 'Costa Rica'),
+  (2, 'Panamá'),
+  (3, 'Nicaragua');
+
+INSERT INTO provincia (id, pais_id, nombre) VALUES
+  -- Costa Rica
+  (1, 1, 'San José'),
+  (2, 1, 'Alajuela'),
+  (3, 1, 'Cartago'),
+  (4, 1, 'Heredia'),
+  (5, 1, 'Guanacaste'),
+  (6, 1, 'Puntarenas'),
+  (7, 1, 'Limón'),
+  -- Panamá
+  (8, 2, 'Panamá'),
+  (9, 2, 'Chiriquí'),
+  (10, 2, 'Colón'),
+  -- Nicaragua
+  (11, 3, 'Managua'),
+  (12, 3, 'León'),
+  (13, 3, 'Granada');
+
+INSERT INTO canton (provincia_id, nombre) VALUES
+  -- Costa Rica
+  (1, 'San José'),   (1, 'Escazú'),     (1, 'Desamparados'), (1, 'Curridabat'),
+  (2, 'Alajuela'),   (2, 'San Ramón'),  (2, 'Grecia'),       (2, 'San Carlos'),
+  (3, 'Cartago'),    (3, 'Paraíso'),    (3, 'La Unión'),     (3, 'Turrialba'),
+  (4, 'Heredia'),    (4, 'Barva'),      (4, 'Santo Domingo'), (4, 'Belén'),
+  (5, 'Liberia'),    (5, 'Nicoya'),     (5, 'Santa Cruz'),   (5, 'Tilarán'),
+  (6, 'Puntarenas'), (6, 'Esparza'),    (6, 'Quepos'),       (6, 'Golfito'),
+  (7, 'Limón'),      (7, 'Pococí'),     (7, 'Siquirres'),    (7, 'Talamanca'),
+  -- Panamá
+  (8, 'Panamá'),     (8, 'San Miguelito'),
+  (9, 'David'),       (9, 'Boquete'),
+  (10, 'Colón'),      (10, 'Portobelo'),
+  -- Nicaragua
+  (11, 'Managua'),    (11, 'Tipitapa'),
+  (12, 'León'),       (12, 'Nagarote'),
+  (13, 'Granada'),    (13, 'Nandaime');
 
 -- ---------------------------------------------------------------------
 -- 2. Productos del menú (HU-03) · 5 por categoría
