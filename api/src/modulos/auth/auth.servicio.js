@@ -45,7 +45,7 @@ async function enviarLinkVerificacion(usuario) {
 }
 
 // HU-01 · Registro. La cuenta queda PENDIENTE: NO inicia sesión.
-// datos: { nombre_completo, cedula, telefono, correo, contrasena, respuestas: [{ pregunta_id, respuesta }] }
+// datos: { nombre_completo, cedula, telefono, canton_id, correo, contrasena, respuestas: [{ pregunta_id, respuesta }] }
 async function registrar(datos, req) {
   // HU-23 · Cada dato se protege como corresponde antes de guardarlo
   const usuario = await authRepositorio.registrarUsuario({
@@ -53,6 +53,7 @@ async function registrar(datos, req) {
     cedula_cifrada: cifrar(datos.cedula),           // AES: se puede leer en el perfil
     cedula_hash: hashCedula(datos.cedula),          // HMAC: para no repetir la cédula
     telefono_cifrado: cifrar(datos.telefono),       // AES
+    canton_id: datos.canton_id,                     // ubicación (no es dato sensible)
     correo: datos.correo,
     contrasena_hash: await seguridad.hashContrasena(datos.contrasena),   // bcrypt
     respuestas: await Promise.all(datos.respuestas.map(async (r) => ({

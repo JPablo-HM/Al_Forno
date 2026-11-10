@@ -18,11 +18,12 @@ const pool = require('../../config/db');
 // respuestas: [{ pregunta_id, respuesta_hash }]. Si el correo o la cédula
 // ya existen, el procedimiento lanza un error 409.
 async function registrarUsuario(datos) {
-  const [resultados] = await pool.query('CALL sp_RegistrarUsuario(?, ?, ?, ?, ?, ?, ?)', [
+  const [resultados] = await pool.query('CALL sp_RegistrarUsuario(?, ?, ?, ?, ?, ?, ?, ?)', [
     datos.nombre_completo,
     datos.cedula_cifrada,
     datos.cedula_hash,
     datos.telefono_cifrado,
+    datos.canton_id,
     datos.correo,
     datos.contrasena_hash,
     JSON.stringify(datos.respuestas),
@@ -39,6 +40,7 @@ async function obtenerUsuarioPorCorreo(correo) {
 }
 
 // Perfil (sin contraseña). La cédula y el teléfono vienen cifrados.
+// También trae los nombres del cantón, la provincia y el país.
 async function obtenerUsuario(id) {
   const [resultados] = await pool.query('CALL sp_ObtenerUsuario(?)', [id]);
   return resultados[0][0];

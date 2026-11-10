@@ -40,6 +40,10 @@ router.use('/auth', limiteCuenta, require('./auth/auth.rutas'));
 // Módulo Recuperación (HU-22): POST /api/recuperacion/inicio, /verificar, /nueva
 router.use('/recuperacion', limiteCuenta, require('./recuperacion/recuperacion.rutas'));
 
+// Módulo Ubicación (HU-01, cajas del registro): GET /api/ubicacion/paises,
+// GET /api/ubicacion/provincias?pais=, GET /api/ubicacion/cantones?provincia=
+router.use('/ubicacion', require('./ubicacion/ubicacion.rutas'));
+
 // Módulo Perfil (con sesión): GET /api/perfil, PUT /api/perfil/contrasena,
 // POST /api/perfil/autenticador, POST /api/perfil/autenticador/confirmar,
 // DELETE /api/perfil/autenticador
