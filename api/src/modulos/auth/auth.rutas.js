@@ -19,7 +19,7 @@ router.get('/preguntas', async (req, res) => {
 });
 
 // POST /api/auth/registro (HU-01) · Público
-// Cuerpo: { nombre_completo, cedula, telefono, canton_id, correo, contrasena,
+// Cuerpo: { nombre_completo, cedula, telefono, distrito_id, correo, contrasena,
 //           confirmacion, respuestas: [{ pregunta_id, respuesta }, ×3] }
 // trim() quita espacios al inicio y al final antes de validar.
 router.post(
@@ -28,9 +28,9 @@ router.post(
     .isLength({ max: 100 }).withMessage('El nombre es muy largo'),
   body('cedula').trim().matches(/^\d{9}$/).withMessage('La cédula debe tener 9 dígitos'),
   body('telefono').trim().matches(/^\d{8}$/).withMessage('El teléfono debe tener 8 dígitos'),
-  // Ubicación: solo llega el cantón (la provincia y el país salen de él).
-  // Si el número no existe en la base, sp_RegistrarUsuario responde 400.
-  body('canton_id').isInt({ min: 1 }).withMessage('Elige tu país, provincia y cantón').toInt(),
+  // Ubicación: solo llega el distrito (el cantón, la provincia y el país
+  // salen de él). Si no existe en la base, sp_RegistrarUsuario responde 400.
+  body('distrito_id').isInt({ min: 1 }).withMessage('Elige tu país, provincia, cantón y distrito').toInt(),
   body('correo').trim().toLowerCase().isEmail().withMessage('Escribe un correo válido')
     .isLength({ max: 254 }).withMessage('El correo es muy largo'),
   contrasenaSegura('contrasena'),

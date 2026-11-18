@@ -23,7 +23,7 @@ async function registrarUsuario(datos) {
     datos.cedula_cifrada,
     datos.cedula_hash,
     datos.telefono_cifrado,
-    datos.canton_id,
+    datos.distrito_id,
     datos.correo,
     datos.contrasena_hash,
     JSON.stringify(datos.respuestas),
@@ -40,7 +40,7 @@ async function obtenerUsuarioPorCorreo(correo) {
 }
 
 // Perfil (sin contraseña). La cédula y el teléfono vienen cifrados.
-// También trae los nombres del cantón, la provincia y el país.
+// También trae los nombres del distrito, el cantón, la provincia y el país.
 async function obtenerUsuario(id) {
   const [resultados] = await pool.query('CALL sp_ObtenerUsuario(?)', [id]);
   return resultados[0][0];

@@ -33,6 +33,7 @@ async function obtenerPerfil(id) {
     pais: u.pais,
     provincia: u.provincia,
     canton: u.canton,
+    distrito: u.distrito,
     authenticator_activo: Boolean(u.authenticator_activo),
   };
 }

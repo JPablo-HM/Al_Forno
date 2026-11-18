@@ -41,7 +41,8 @@ router.use('/auth', limiteCuenta, require('./auth/auth.rutas'));
 router.use('/recuperacion', limiteCuenta, require('./recuperacion/recuperacion.rutas'));
 
 // Módulo Ubicación (HU-01, cajas del registro): GET /api/ubicacion/paises,
-// GET /api/ubicacion/provincias?pais=, GET /api/ubicacion/cantones?provincia=
+// GET /api/ubicacion/provincias?pais=, GET /api/ubicacion/cantones?provincia=,
+// GET /api/ubicacion/distritos?canton=
 router.use('/ubicacion', require('./ubicacion/ubicacion.rutas'));
 
 // Módulo Perfil (con sesión): GET /api/perfil, PUT /api/perfil/contrasena,

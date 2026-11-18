@@ -15,4 +15,8 @@ async function listarCantones(provinciaId) {
   return ubicacionRepositorio.listarCantones(provinciaId);
 }
 
-module.exports = { listarPaises, listarProvincias, listarCantones };
+async function listarDistritos(cantonId) {
+  return ubicacionRepositorio.listarDistritos(cantonId);
+}
+
+module.exports = { listarPaises, listarProvincias, listarCantones, listarDistritos };

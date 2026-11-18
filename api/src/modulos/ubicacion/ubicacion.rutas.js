@@ -1,5 +1,5 @@
 // CAPA API (rutas) del módulo Ubicación (HU-01 Registro).
-// Llenan las 3 cajas del registro en cascada: cada caja se pide solo
+// Llenan las 4 cajas del registro en cascada: cada caja se pide solo
 // cuando hace falta, y la app actualiza solo esa caja (sin recargar la
 // pantalla). Son públicas: el registro se hace sin sesión.
 const { Router } = require('express');
@@ -33,6 +33,16 @@ router.get(
   validar,
   async (req, res) => {
     res.json(await ubicacionServicio.listarCantones(req.query.provincia));
+  }
+);
+
+// GET /api/ubicacion/distritos?canton=1 · Al elegir un cantón
+router.get(
+  '/distritos',
+  query('canton').isInt({ min: 1 }).withMessage('Cantón inválido').toInt(),
+  validar,
+  async (req, res) => {
+    res.json(await ubicacionServicio.listarDistritos(req.query.canton));
   }
 );
 

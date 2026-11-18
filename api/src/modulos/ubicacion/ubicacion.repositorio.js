@@ -22,4 +22,10 @@ async function listarCantones(provinciaId) {
   return resultados[0];
 }
 
-module.exports = { listarPaises, listarProvincias, listarCantones };
+// Los distritos de UN cantón → sp_ListarDistritos(canton_id)
+async function listarDistritos(cantonId) {
+  const [resultados] = await pool.query('CALL sp_ListarDistritos(?)', [cantonId]);
+  return resultados[0];
+}
+
+module.exports = { listarPaises, listarProvincias, listarCantones, listarDistritos };
