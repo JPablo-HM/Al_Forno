@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  02_procedimientos.sql  →  Procedimientos almacenados
 --
---  Versión 2.2 · 9 de noviembre de 2026 (país, provincia y cantón)
+--  Versión 2.3 · 11 de noviembre de 2026 (distrito)
 --  Ejecutar después de 01_tablas.sql. Se puede volver a ejecutar sin
 --  borrar datos (cada procedimiento se elimina y se vuelve a crear).
 --
@@ -66,7 +66,7 @@ DELIMITER $$
 -- (no puede iniciar sesión hasta confirmar el correo).
 -- ★ Transacción: el usuario, sus 3 respuestas de seguridad y su primera
 --   contraseña en el historial se guardan juntos, o no se guarda nada.
--- p_canton_id: el cantón elegido (la provincia y el país salen de él).
+-- p_distrito_id: el distrito elegido (el cantón, la provincia y el país salen de él).
 -- p_respuestas: [{"pregunta_id": 1, "respuesta_hash": "$2b$10$..."}, ...]
 DROP PROCEDURE IF EXISTS sp_RegistrarUsuario $$
 CREATE PROCEDURE sp_RegistrarUsuario(
@@ -74,7 +74,7 @@ CREATE PROCEDURE sp_RegistrarUsuario(
   IN p_cedula_cifrada    VARCHAR(100),
   IN p_cedula_hash       CHAR(64),
   IN p_telefono_cifrado  VARCHAR(100),
-  IN p_canton_id         SMALLINT UNSIGNED,
+  IN p_distrito_id       SMALLINT UNSIGNED,
   IN p_correo            VARCHAR(254),
   IN p_contrasena_hash   CHAR(60),
   IN p_respuestas        JSON
@@ -98,19 +98,19 @@ BEGIN
   IF EXISTS (SELECT 1 FROM usuario WHERE cedula_hash = p_cedula_hash) THEN
     SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409, MESSAGE_TEXT = 'Esa cédula ya está registrada';
   END IF;
-  -- Ubicación: el cantón debe existir (la llave foránea también lo exige,
+  -- Ubicación: el distrito debe existir (la llave foránea también lo exige,
   -- pero así la app recibe un mensaje claro: 400 en lugar de un error 500).
-  IF NOT EXISTS (SELECT 1 FROM canton WHERE id = p_canton_id) THEN
-    SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5400, MESSAGE_TEXT = 'El cantón elegido no existe';
+  IF NOT EXISTS (SELECT 1 FROM distrito WHERE id = p_distrito_id) THEN
+    SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5400, MESSAGE_TEXT = 'El distrito elegido no existe';
   END IF;
 
   START TRANSACTION;
 
     -- 1. El usuario (estado PENDIENTE por defecto)
-    INSERT INTO usuario (rol, nombre_completo, cedula, cedula_hash, telefono, canton_id,
+    INSERT INTO usuario (rol, nombre_completo, cedula, cedula_hash, telefono, distrito_id,
                          correo, contrasena_hash)
     VALUES ('CLIENTE', p_nombre_completo, p_cedula_cifrada, p_cedula_hash, p_telefono_cifrado,
-            p_canton_id, p_correo, p_contrasena_hash);
+            p_distrito_id, p_correo, p_contrasena_hash);
     SET v_usuario_id = LAST_INSERT_ID();
 
     -- 2. Las 3 respuestas de seguridad (HU-01, se usan en HU-22).
@@ -151,13 +151,14 @@ END $$
 DROP PROCEDURE IF EXISTS sp_ObtenerUsuario $$
 CREATE PROCEDURE sp_ObtenerUsuario(IN p_id INT UNSIGNED)
 BEGIN
-  -- La ubicación se arma uniendo canton → provincia → pais.
-  -- LEFT JOIN: el administrador no tiene cantón y aun así debe salir.
+  -- La ubicación se arma uniendo distrito → canton → provincia → pais.
+  -- LEFT JOIN: el administrador no tiene distrito y aun así debe salir.
   SELECT u.id, u.rol, u.nombre_completo, u.cedula, u.telefono, u.correo, u.estado,
          u.authenticator_activo,
-         c.nombre AS canton, pr.nombre AS provincia, pa.nombre AS pais
+         d.nombre AS distrito, c.nombre AS canton, pr.nombre AS provincia, pa.nombre AS pais
     FROM usuario u
-    LEFT JOIN canton    c  ON c.id  = u.canton_id
+    LEFT JOIN distrito  d  ON d.id  = u.distrito_id
+    LEFT JOIN canton    c  ON c.id  = d.canton_id
     LEFT JOIN provincia pr ON pr.id = c.provincia_id
     LEFT JOIN pais      pa ON pa.id = pr.pais_id
    WHERE u.id = p_id;
@@ -166,10 +167,11 @@ END $$
 
 -- =====================================================================
 --  UBICACIÓN  (HU-01 Registro)
---  Llenan las 3 cajas del registro, una a la vez (en cascada):
+--  Llenan las 4 cajas del registro, una a la vez (en cascada):
 --    1. Al abrir el registro       → sp_ListarPaises
 --    2. Al elegir un país          → sp_ListarProvincias(país)
 --    3. Al elegir una provincia    → sp_ListarCantones(provincia)
+--    4. Al elegir un cantón        → sp_ListarDistritos(cantón)
 --  Cada uno es UNA consulta y devuelve la lista en orden alfabético.
 -- =====================================================================
 DROP PROCEDURE IF EXISTS sp_ListarPaises $$
@@ -188,6 +190,12 @@ DROP PROCEDURE IF EXISTS sp_ListarCantones $$
 CREATE PROCEDURE sp_ListarCantones(IN p_provincia_id SMALLINT UNSIGNED)
 BEGIN
   SELECT id, nombre FROM canton WHERE provincia_id = p_provincia_id ORDER BY nombre;
+END $$
+
+DROP PROCEDURE IF EXISTS sp_ListarDistritos $$
+CREATE PROCEDURE sp_ListarDistritos(IN p_canton_id SMALLINT UNSIGNED)
+BEGIN
+  SELECT id, nombre FROM distrito WHERE canton_id = p_canton_id ORDER BY nombre;
 END $$
 
 

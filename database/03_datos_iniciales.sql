@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  03_datos_iniciales.sql  →  Datos con los que arranca el sistema
 --
---  Versión 2.2 · 9 de noviembre de 2026 (país, provincia y cantón)
+--  Versión 2.3 · 11 de noviembre de 2026 (distrito)
 --  Ejecutar después de 01_tablas.sql y 02_procedimientos.sql.
 --
 --  El horario y los datos del restaurante (dirección, teléfono) NO están
@@ -49,12 +49,15 @@ INSERT INTO pregunta_seguridad (texto) VALUES
   ('¿Cuál es tu comida favorita?');
 
 -- ---------------------------------------------------------------------
--- 1c. Países, provincias y cantones (HU-01: ubicación en el registro)
---     3 países · 13 provincias · 40 cantones.
---     Costa Rica: sus 7 provincias con 4 cantones cada una.
---     Panamá y Nicaragua: 3 provincias con 2 cantones cada una.
---     Los id de país y provincia se escriben a mano para que se lea a
---     cuál pertenece cada fila.
+-- 1c. Países, provincias, cantones y distritos (HU-01: ubicación en el registro)
+--     3 países · 13 provincias · 40 cantones · 75 distritos.
+--     Costa Rica: sus 7 provincias, 4 cantones cada una y 2 distritos por cantón.
+--     Panamá: 3 provincias, 2 cantones cada una y 2 distritos por cantón.
+--     Nicaragua: 3 provincias y 2 cantones cada una. Los municipios no se
+--     dividen: cada cantón tiene 1 distrito con su mismo nombre (Managua
+--     sí tiene Distrito I y Distrito II).
+--     Los id de país, provincia y cantón se escriben a mano para que se
+--     lea a cuál pertenece cada fila.
 -- ---------------------------------------------------------------------
 INSERT INTO pais (id, nombre) VALUES
   (1, 'Costa Rica'),
@@ -79,23 +82,95 @@ INSERT INTO provincia (id, pais_id, nombre) VALUES
   (12, 3, 'León'),
   (13, 3, 'Granada');
 
-INSERT INTO canton (provincia_id, nombre) VALUES
+INSERT INTO canton (id, provincia_id, nombre) VALUES
   -- Costa Rica
-  (1, 'San José'),   (1, 'Escazú'),     (1, 'Desamparados'), (1, 'Curridabat'),
-  (2, 'Alajuela'),   (2, 'San Ramón'),  (2, 'Grecia'),       (2, 'San Carlos'),
-  (3, 'Cartago'),    (3, 'Paraíso'),    (3, 'La Unión'),     (3, 'Turrialba'),
-  (4, 'Heredia'),    (4, 'Barva'),      (4, 'Santo Domingo'), (4, 'Belén'),
-  (5, 'Liberia'),    (5, 'Nicoya'),     (5, 'Santa Cruz'),   (5, 'Tilarán'),
-  (6, 'Puntarenas'), (6, 'Esparza'),    (6, 'Quepos'),       (6, 'Golfito'),
-  (7, 'Limón'),      (7, 'Pococí'),     (7, 'Siquirres'),    (7, 'Talamanca'),
+  (1, 1, 'San José'),
+  (2, 1, 'Escazú'),
+  (3, 1, 'Desamparados'),
+  (4, 1, 'Curridabat'),
+  (5, 2, 'Alajuela'),
+  (6, 2, 'San Ramón'),
+  (7, 2, 'Grecia'),
+  (8, 2, 'San Carlos'),
+  (9, 3, 'Cartago'),
+  (10, 3, 'Paraíso'),
+  (11, 3, 'La Unión'),
+  (12, 3, 'Turrialba'),
+  (13, 4, 'Heredia'),
+  (14, 4, 'Barva'),
+  (15, 4, 'Santo Domingo'),
+  (16, 4, 'Belén'),
+  (17, 5, 'Liberia'),
+  (18, 5, 'Nicoya'),
+  (19, 5, 'Santa Cruz'),
+  (20, 5, 'Tilarán'),
+  (21, 6, 'Puntarenas'),
+  (22, 6, 'Esparza'),
+  (23, 6, 'Quepos'),
+  (24, 6, 'Golfito'),
+  (25, 7, 'Limón'),
+  (26, 7, 'Pococí'),
+  (27, 7, 'Siquirres'),
+  (28, 7, 'Talamanca'),
   -- Panamá
-  (8, 'Panamá'),     (8, 'San Miguelito'),
-  (9, 'David'),       (9, 'Boquete'),
-  (10, 'Colón'),      (10, 'Portobelo'),
+  (29, 8, 'Panamá'),
+  (30, 8, 'San Miguelito'),
+  (31, 9, 'David'),
+  (32, 9, 'Boquete'),
+  (33, 10, 'Colón'),
+  (34, 10, 'Portobelo'),
   -- Nicaragua
-  (11, 'Managua'),    (11, 'Tipitapa'),
-  (12, 'León'),       (12, 'Nagarote'),
-  (13, 'Granada'),    (13, 'Nandaime');
+  (35, 11, 'Managua'),
+  (36, 11, 'Tipitapa'),
+  (37, 12, 'León'),
+  (38, 12, 'Nagarote'),
+  (39, 13, 'Granada'),
+  (40, 13, 'Nandaime');
+
+INSERT INTO distrito (canton_id, nombre) VALUES
+  -- Costa Rica
+  (1, 'Carmen'), (1, 'Merced'),   -- San José
+  (2, 'Escazú'), (2, 'San Rafael'),   -- Escazú
+  (3, 'Desamparados'), (3, 'Patarrá'),   -- Desamparados
+  (4, 'Curridabat'), (4, 'Granadilla'),   -- Curridabat
+  (5, 'Alajuela'), (5, 'La Guácima'),   -- Alajuela
+  (6, 'San Ramón'), (6, 'Santiago'),   -- San Ramón
+  (7, 'Grecia'), (7, 'Tacares'),   -- Grecia
+  (8, 'Quesada'), (8, 'La Fortuna'),   -- San Carlos
+  (9, 'Oriental'), (9, 'Occidental'),   -- Cartago
+  (10, 'Paraíso'), (10, 'Orosi'),   -- Paraíso
+  (11, 'Tres Ríos'), (11, 'San Diego'),   -- La Unión
+  (12, 'Turrialba'), (12, 'La Suiza'),   -- Turrialba
+  (13, 'Heredia'), (13, 'San Francisco'),   -- Heredia
+  (14, 'Barva'), (14, 'San Pedro'),   -- Barva
+  (15, 'Santo Domingo'), (15, 'Santo Tomás'),   -- Santo Domingo
+  (16, 'San Antonio'), (16, 'La Ribera'),   -- Belén
+  (17, 'Liberia'), (17, 'Curubandé'),   -- Liberia
+  (18, 'Nicoya'), (18, 'Sámara'),   -- Nicoya
+  (19, 'Santa Cruz'), (19, 'Tamarindo'),   -- Santa Cruz
+  (20, 'Tilarán'), (20, 'Tronadora'),   -- Tilarán
+  (21, 'Puntarenas'), (21, 'Barranca'),   -- Puntarenas
+  (22, 'Espíritu Santo'), (22, 'Caldera'),   -- Esparza
+  (23, 'Quepos'), (23, 'Savegre'),   -- Quepos
+  (24, 'Golfito'), (24, 'Guaycará'),   -- Golfito
+  (25, 'Limón'), (25, 'Matama'),   -- Limón
+  (26, 'Guápiles'), (26, 'Cariari'),   -- Pococí
+  (27, 'Siquirres'), (27, 'Pacuarito'),   -- Siquirres
+  (28, 'Cahuita'), (28, 'Sixaola'),   -- Talamanca
+  -- Panamá
+  (29, 'Bella Vista'), (29, 'San Francisco'),   -- Panamá
+  (30, 'Amelia Denis de Icaza'), (30, 'Belisario Porras'),   -- San Miguelito
+  (31, 'Las Lomas'), (31, 'San Pablo Viejo'),   -- David
+  (32, 'Bajo Boquete'), (32, 'Alto Boquete'),   -- Boquete
+  (33, 'Barrio Norte'), (33, 'Barrio Sur'),   -- Colón
+  (34, 'Portobelo'), (34, 'Garrote'),   -- Portobelo
+  -- Nicaragua
+  (35, 'Distrito I'), (35, 'Distrito II'),   -- Managua
+  (36, 'Tipitapa'),   -- Tipitapa
+  (37, 'León'),   -- León
+  (38, 'Nagarote'),   -- Nagarote
+  (39, 'Granada'),   -- Granada
+  (40, 'Nandaime');   -- Nandaime
 
 -- ---------------------------------------------------------------------
 -- 2. Productos del menú (HU-03) · 5 por categoría
