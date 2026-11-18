@@ -1,6 +1,6 @@
 // =====================================================================
 // COMPONENTE · Selector (caja que se despliega)
-// Lo usa Registro para elegir país, provincia y cantón.
+// Lo usa Registro para elegir país, provincia, cantón y distrito.
 // Se ve como un CampoFormulario; al tocarlo se abre una ventana (Modal)
 // con la lista y, al elegir una opción, se cierra.
 //

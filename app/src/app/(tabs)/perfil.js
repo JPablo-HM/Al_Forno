@@ -74,7 +74,7 @@ export default function Perfil() {
               <Dato
                 icono="location-outline"
                 etiqueta="Ubicación"
-                valor={`${perfil.canton}, ${perfil.provincia}, ${perfil.pais}`}
+                valor={`${perfil.distrito}, ${perfil.canton}, ${perfil.provincia}, ${perfil.pais}`}
               />
             ) : null}
             <Dato icono="mail-outline" etiqueta="Correo" valor={perfil.correo} />

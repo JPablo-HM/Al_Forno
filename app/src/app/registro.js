@@ -5,17 +5,18 @@
 // Se llega desde: Perfil → "Crear cuenta" o el enlace "Registrate" del login
 //
 // Tiene DOS vistas según el estado "enviado":
-//   1. El formulario: datos personales, ubicación (país, provincia y
-//      cantón), contraseña con la política en vivo (lista con ✓, HU-20) y
+//   1. El formulario: datos personales, ubicación (país, provincia,
+//      cantón y distrito), contraseña con la política en vivo (lista con ✓, HU-20) y
 //      3 preguntas de seguridad con su respuesta.
 //   2. "Revisá tu correo": la cuenta queda Pendiente de verificación hasta
 //      que el cliente abra el link del correo (HU-01). NO inicia sesión.
 //
 // Datos: GET /api/auth/preguntas y POST /api/auth/registro (services/auth.js).
-// Ubicación (services/ubicacion.js): las 3 cajas se llenan en cascada. Cada
+// Ubicación (services/ubicacion.js): las 4 cajas se llenan en cascada. Cada
 // lista se pide a la API solo cuando hace falta y se actualiza SOLO esa
 // caja, sin recargar la pantalla:
-//   abrir → países · elegir país → sus provincias · elegir provincia → sus cantones
+//   abrir → países · elegir país → sus provincias · elegir provincia → sus
+//   cantones · elegir cantón → sus distritos
 // Las reglas se revisan DOS veces:
 //   1. Aquí, antes de enviar, para avisar rápido campo por campo.
 //   2. En la API (express-validator), que es la que manda: aunque alguien
@@ -26,7 +27,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { obtenerPreguntas, registrar, reenviarVerificacion } from '../services/auth';
-import { listarPaises, listarProvincias, listarCantones } from '../services/ubicacion';
+import { listarPaises, listarProvincias, listarCantones, listarDistritos } from '../services/ubicacion';
 import CampoFormulario from '../components/CampoFormulario';
 import ListaPolitica from '../components/ListaPolitica';
 import Aviso from '../components/Aviso';
@@ -37,8 +38,9 @@ import { cumplePolitica } from '../utils/contrasena';
 import { COLORES } from '../config/config';
 
 // Campos del formulario. Todos empiezan vacíos.
-// canton_id: lo único de la ubicación que se envía (la API saca la provincia y el país).
-const VACIO = { nombre_completo: '', cedula: '', telefono: '', canton_id: null, correo: '', contrasena: '', confirmacion: '' };
+// distrito_id: lo único de la ubicación que se envía (de él salen el cantón,
+// la provincia y el país).
+const VACIO = { nombre_completo: '', cedula: '', telefono: '', distrito_id: null, correo: '', contrasena: '', confirmacion: '' };
 
 // HU-01 · Revisa los datos y devuelve { campo: 'mensaje' } con los errores.
 // respuestas = [{ pregunta_id, respuesta }] con las preguntas elegidas.
@@ -49,7 +51,7 @@ function validarFormulario(f, respuestas) {
   // /^\d{9}$/ = exactamente 9 dígitos, nada más
   if (!/^\d{9}$/.test(f.cedula)) errores.cedula = 'La cédula debe tener 9 dígitos';
   if (!/^\d{8}$/.test(f.telefono)) errores.telefono = 'El teléfono debe tener 8 dígitos';
-  if (!f.canton_id) errores.canton_id = 'Elige tu país, provincia y cantón';
+  if (!f.distrito_id) errores.distrito_id = 'Elige tu país, provincia, cantón y distrito';
   // algo@algo.algo
   if (!/^\S+@\S+\.\S+$/.test(f.correo.trim())) errores.correo = 'Escribe un correo válido';
   // HU-20: las 5 reglas de la política (utils/contrasena.js)
@@ -73,14 +75,16 @@ export default function Registro() {
   const [enviado, setEnviado] = useState(null);
   const [avisoReenvio, setAvisoReenvio] = useState(null);
 
-  // Ubicación: las 3 listas, lo elegido en las 2 primeras cajas (el cantón
-  // va en form.canton_id) y cuál caja está esperando a la API.
+  // Ubicación: las 4 listas, lo elegido en las 3 primeras cajas (el
+  // distrito va en form.distrito_id) y cuál caja está esperando a la API.
   const [paises, setPaises] = useState([]);
   const [provincias, setProvincias] = useState([]);
   const [cantones, setCantones] = useState([]);
+  const [distritos, setDistritos] = useState([]);
   const [paisId, setPaisId] = useState(null);
   const [provinciaId, setProvinciaId] = useState(null);
-  const [cargandoLista, setCargandoLista] = useState(null); // null | 'provincias' | 'cantones'
+  const [cantonId, setCantonId] = useState(null);
+  const [cargandoLista, setCargandoLista] = useState(null); // null | 'provincias' | 'cantones' | 'distritos'
 
   // Al abrir la pantalla se piden las preguntas y los países a la API.
   // [] = solo una vez, al abrir.
@@ -93,14 +97,16 @@ export default function Registro() {
       .catch((e) => setErrorGeneral(e.message));
   }, []);
 
-  // Elegir país: se borran la provincia y el cantón de antes, y se piden
-  // SOLO las provincias de ese país (se actualiza solo esa caja).
+  // Elegir país: se borra lo elegido debajo (provincia, cantón y distrito)
+  // y se piden SOLO las provincias de ese país (se actualiza solo esa caja).
   function alElegirPais(id) {
     setPaisId(id);
     setProvinciaId(null);
+    setCantonId(null);
     setProvincias([]);
     setCantones([]);
-    setForm((actual) => ({ ...actual, canton_id: null }));
+    setDistritos([]);
+    setForm((actual) => ({ ...actual, distrito_id: null }));
     setCargandoLista('provincias');
     listarProvincias(id)
       .then(setProvincias)
@@ -108,11 +114,14 @@ export default function Registro() {
       .finally(() => setCargandoLista(null));
   }
 
-  // Elegir provincia: se borra el cantón de antes y se piden SOLO sus cantones.
+  // Elegir provincia: se borran el cantón y el distrito de antes y se piden
+  // SOLO sus cantones.
   function alElegirProvincia(id) {
     setProvinciaId(id);
+    setCantonId(null);
     setCantones([]);
-    setForm((actual) => ({ ...actual, canton_id: null }));
+    setDistritos([]);
+    setForm((actual) => ({ ...actual, distrito_id: null }));
     setCargandoLista('cantones');
     listarCantones(id)
       .then(setCantones)
@@ -120,10 +129,22 @@ export default function Registro() {
       .finally(() => setCargandoLista(null));
   }
 
-  // Elegir cantón: es el dato que se envía en el registro.
+  // Elegir cantón: se borra el distrito de antes y se piden SOLO sus distritos.
   function alElegirCanton(id) {
-    setForm((actual) => ({ ...actual, canton_id: id }));
-    setErrores((actual) => ({ ...actual, canton_id: null }));
+    setCantonId(id);
+    setDistritos([]);
+    setForm((actual) => ({ ...actual, distrito_id: null }));
+    setCargandoLista('distritos');
+    listarDistritos(id)
+      .then(setDistritos)
+      .catch((e) => setErrorGeneral(e.message))
+      .finally(() => setCargandoLista(null));
+  }
+
+  // Elegir distrito: es el dato que se envía en el registro.
+  function alElegirDistrito(id) {
+    setForm((actual) => ({ ...actual, distrito_id: id }));
+    setErrores((actual) => ({ ...actual, distrito_id: null }));
   }
 
   // Devuelve la función que actualiza UN campo y borra su error.
@@ -265,12 +286,21 @@ export default function Registro() {
       <Selector
         etiqueta="CANTÓN"
         opciones={cantones}
-        valor={form.canton_id}
+        valor={cantonId}
         onCambiar={alElegirCanton}
         placeholder={provinciaId ? 'Elige tu cantón' : 'Primero elige la provincia'}
         deshabilitado={!provinciaId}
         cargando={cargandoLista === 'cantones'}
-        error={errores.canton_id}
+      />
+      <Selector
+        etiqueta="DISTRITO"
+        opciones={distritos}
+        valor={form.distrito_id}
+        onCambiar={alElegirDistrito}
+        placeholder={cantonId ? 'Elige tu distrito' : 'Primero elige el cantón'}
+        deshabilitado={!cantonId}
+        cargando={cargandoLista === 'distritos'}
+        error={errores.distrito_id}
       />
       <CampoFormulario
         etiqueta="CORREO"
