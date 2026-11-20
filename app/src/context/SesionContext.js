@@ -1,6 +1,6 @@
 // Sesión del usuario: quién está usando la app y con qué rol.
 // La navegación (src/app/_layout.js) decide qué pantallas mostrar según
-// este estado: visitante, CLIENTE o ADMIN.
+// este estado: visitante o CLIENTE.
 //
 // La sesión vive solo en memoria: al cerrar la app se pierde y hay que
 // iniciar sesión de nuevo (decisión del proyecto).
@@ -18,7 +18,7 @@ const SesionContext = createContext(null);
 // envuelve. En _layout.js envuelve la app completa.
 export function SesionProvider({ children }) {
   // null = visitante sin sesión
-  // { id, nombre_completo, correo, rol: 'CLIENTE' | 'ADMIN' } = sesión iniciada
+  // { id, nombre_completo, correo, rol: 'CLIENTE' } = sesión iniciada
   // (lo que devuelve la API en POST /api/auth/login o /registro)
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(null);
@@ -31,7 +31,6 @@ export function SesionProvider({ children }) {
       token,
       // ?. (encadenamiento opcional): si usuario es null no falla, da undefined.
       esCliente: usuario?.rol === 'CLIENTE',
-      esAdmin: usuario?.rol === 'ADMIN',
       // Al cambiar el usuario, _layout.js recalcula qué pantallas se permiten.
       iniciarSesion: (datosUsuario, nuevoToken = null) => {
         setUsuario(datosUsuario);
@@ -49,7 +48,7 @@ export function SesionProvider({ children }) {
 }
 
 // Hook para leer la sesión desde cualquier pantalla, por ejemplo:
-//   const { usuario, esAdmin, cerrarSesion } = useSesion();
+//   const { usuario, esCliente, cerrarSesion } = useSesion();
 // Si se usa fuera del Provider, avisa con un error claro.
 export function useSesion() {
   const contexto = useContext(SesionContext);

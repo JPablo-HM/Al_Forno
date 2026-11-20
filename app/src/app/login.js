@@ -1,26 +1,24 @@
 // =====================================================================
 // PANTALLA · Iniciar sesión          Ruta: /login
-// Historias: HU-02, HU-14, HU-20, HU-21
+// Historias: HU-02, HU-20, HU-21
 // Quién la ve: solo visitantes sin sesión (Perfil → "Iniciar sesión", o al
 // tocar algo que pide sesión, como el "+" del menú).
 //
-// Un mismo login para clientes y administradores. El cliente entra en
-// PASOS; la pantalla guarda en qué paso va en el estado "paso" y según ese
+// Login de clientes (la API no deja entrar al administrador: la app es solo
+// para clientes). El cliente entra en PASOS; la pantalla guarda en qué paso va en el estado "paso" y según ese
 // valor dibuja una parte u otra:
 //   'CREDENCIALES' → correo y contraseña                     (HU-02)
 //   'METODO'       → elegir correo o Google Authenticator     (HU-21)
 //                    (solo si vinculó Authenticator; si no, se salta)
 //   'CODIGO'       → escribir el código de 6 dígitos          (HU-21)
 //   'VENCIDA'      → la contraseña venció: crear una nueva    (HU-20)
-// El administrador entra en el primer paso (HU-14 no cambia).
 //
 // Entre un paso y otro la API entrega un "pase" (token temporal de 10
 // minutos que solo sirve para el paso siguiente). Se guarda en el estado
 // de esta pantalla, en memoria, y se manda como token.
 //
 // Al terminar no hace falta navegar a mano: iniciarSesion() cambia la
-// sesión y _layout.js lleva al cliente a Inicio y al administrador a /admin.
-// Administrador de la base: admin@alforno.cr / Cambiar.AlForno2026
+// sesión y _layout.js lleva al cliente a Inicio.
 // =====================================================================
 import { useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
@@ -93,7 +91,6 @@ export default function Login() {
     llamar(async () => {
       try {
         const respuesta = await login(correo, contrasena);
-        if (respuesta.paso === 'LISTO') return alResponderApi(respuesta); // administrador
         setPase(respuesta.pase);
         setMetodos(respuesta.metodos);
         // Si solo tiene correo, se salta la elección y se envía el código.

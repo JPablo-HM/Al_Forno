@@ -11,7 +11,7 @@
 //   3. POST /login/verificar  código → sesión
 //      (o, si la contraseña venció, pase CAMBIAR_CONTRASENA → paso 4)
 //   4. POST /login/cambiar-contrasena → sesión
-// El ADMINISTRADOR entra en el paso 1 (HU-14 no cambia en la v2.5).
+// El ADMINISTRADOR no puede entrar: la app es solo para clientes (403).
 const authRepositorio = require('./auth.repositorio');
 const seguridad = require('./seguridad.servicio');
 const { cifrar, hashCedula, hashCodigo, generarCodigo, generarTokenLink } = require('../../utils/cifrado');
@@ -136,11 +136,13 @@ async function iniciarSesion(correoEscrito, contrasena, req) {
       { pendiente: true });
   }
 
-  // HU-14 · El administrador entra sin doble factor (sin cambios en la v2.5)
+  // La app es solo para clientes: el administrador no puede entrar.
+  // Se revisa DESPUÉS de la contraseña, para no revelar a cualquiera que
+  // ese correo es del administrador. Queda en la bitácora como fallido.
   if (usuario.rol === 'ADMIN') {
     await seguridad.reiniciarIntentos(usuario);
-    await seguridad.auditar(req, usuario, 'LOGIN_EXITOSO', 'EXITO');
-    return { paso: 'LISTO', usuario: seguridad.datosPublicos(usuario), token: seguridad.crearSesion(usuario) };
+    await seguridad.auditar(req, usuario, 'LOGIN_FALLIDO', 'FALLO');
+    throw errorCon(403, 'Esta cuenta no puede usar la app. La app es solo para clientes.');
   }
 
   // HU-21 · El cliente elige cómo recibir el código

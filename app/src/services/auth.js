@@ -22,11 +22,11 @@ export const registrar = (datos) => pedir('/auth/registro', { metodo: 'POST', cu
 export const reenviarVerificacion = (correo) =>
   pedir('/auth/reenviar-verificacion', { metodo: 'POST', cuerpo: { correo } });
 
-// HU-02 / HU-14 · Paso 1: correo y contraseña → POST /api/auth/login
-// Devuelve { paso: 'DOBLE_FACTOR', pase, metodos: ['CORREO', 'AUTENTICADOR'?] } (cliente)
-//       o  { paso: 'LISTO', usuario, token } (administrador)
+// HU-02 · Paso 1: correo y contraseña → POST /api/auth/login
+// Devuelve { paso: 'DOBLE_FACTOR', pase, metodos: ['CORREO', 'AUTENTICADOR'?] }
 // Errores: 401 datos incorrectos · 423 bloqueada (error.datos.segundos)
 //          403 sin verificar el correo (error.datos.pendiente)
+//          403 cuenta de administrador (la app es solo para clientes)
 export const login = (correo, contrasena) =>
   pedir('/auth/login', { metodo: 'POST', cuerpo: { correo, contrasena } });
 

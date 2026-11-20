@@ -2,16 +2,16 @@
 // Cada archivo dentro de src/app/ es una pantalla y su ruta sale de la carpeta.
 //
 // Las pantallas se agrupan con Stack.Protected según la sesión
-// (mapa de navegación y HU-14):
+// (mapa de navegación):
 //   · Visitantes y clientes: menú inferior (Inicio, Menú, Agenda, Reservas, Perfil).
 //   · Solo sin sesión: Iniciar sesión, Registro y Recuperar contraseña.
 //   · Solo clientes: carrito, pago, mis pedidos, nueva reserva, cambiar
 //     contraseña y Google Authenticator.
-//   · Solo administrador: el panel /admin. El administrador no ve la app de clientes.
+// La app es solo para clientes: la API no deja entrar al administrador.
 //
 // Cuando la sesión cambia y la pantalla actual deja de estar permitida,
 // Expo Router lleva a la primera pantalla disponible: al iniciar sesión el
-// cliente vuelve a Inicio y el administrador entra directo a su panel.
+// cliente vuelve a Inicio.
 //
 // Importante: esto solo organiza la app. La seguridad real está en la API
 // (middleware de roles), que valida el token en cada petición.
@@ -40,7 +40,7 @@ export default function RootLayout() {
 // SesionProvider. Cada vez que la sesión cambia, esta función se vuelve a
 // ejecutar y los "guard" de abajo se recalculan.
 function Navegacion() {
-  const { usuario, esCliente, esAdmin } = useSesion();
+  const { usuario, esCliente } = useSesion();
 
   return (
     // Stack = navegación en pila: cada pantalla nueva se pone encima y la
@@ -56,9 +56,7 @@ function Navegacion() {
       }}
     >
       {/* Visitantes y clientes (acceso libre) */}
-      <Stack.Protected guard={!esAdmin}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack.Protected>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
       {/* Solo sin sesión */}
       <Stack.Protected guard={!usuario}>
@@ -77,11 +75,6 @@ function Navegacion() {
         <Stack.Screen name="nueva-reserva" options={{ title: 'Nueva reserva' }} />
         <Stack.Screen name="cambiar-contrasena" options={{ title: 'Cambiar contraseña' }} />
         <Stack.Screen name="autenticador" options={{ title: 'Google Authenticator' }} />
-      </Stack.Protected>
-
-      {/* Solo administrador */}
-      <Stack.Protected guard={esAdmin}>
-        <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );

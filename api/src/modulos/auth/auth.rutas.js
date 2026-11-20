@@ -85,10 +85,10 @@ router.post(
   }
 );
 
-// POST /api/auth/login (HU-02, HU-14) · Público · Paso 1
+// POST /api/auth/login (HU-02) · Público · Paso 1
 // Cuerpo: { correo, contrasena }
-// Responde { paso: 'DOBLE_FACTOR', pase, metodos } (cliente)
-//       o  { paso: 'LISTO', usuario, token } (administrador)
+// Responde { paso: 'DOBLE_FACTOR', pase, metodos }
+// El administrador recibe 403: la app es solo para clientes.
 router.post(
   '/login',
   body('correo').trim().toLowerCase().notEmpty().withMessage('Escribe tu correo'),
