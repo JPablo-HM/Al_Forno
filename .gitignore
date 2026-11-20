@@ -12,3 +12,6 @@ node_modules/
 
 # Carpeta de documentos de defensa (PDF y Word): tampoco se sube.
 /Doc/
+
+# Python (socios comerciales): carpetas que crea Python al correr
+__pycache__/
