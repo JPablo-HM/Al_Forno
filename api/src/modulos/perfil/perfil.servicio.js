@@ -29,7 +29,7 @@ async function obtenerPerfil(id) {
     cedula: descifrar(u.cedula),
     telefono: descifrar(u.telefono),
     correo: u.correo,
-    // Ubicación (HU-01). null en el administrador.
+    // Ubicación (HU-01)
     pais: u.pais,
     provincia: u.provincia,
     canton: u.canton,

@@ -17,7 +17,6 @@ const { errorCon } = require('../../utils/errores');
 // Paso 1 · ¿Existe una cuenta de cliente activa con ese correo?
 async function iniciar(correoEscrito) {
   const usuario = await authRepositorio.obtenerUsuarioPorCorreo(correoEscrito);
-  // El administrador no tiene preguntas: su cuenta se maneja por script.
   if (!usuario || usuario.estado !== 'ACTIVO' || usuario.rol !== 'CLIENTE') {
     throw errorCon(404, 'No encontramos una cuenta activa con ese correo');
   }

@@ -3,12 +3,13 @@
 const pool = require('../../config/db');
 
 // ★ HU-07 / HU-08 · Guarda un pedido ya pagado → sp_CrearPedido (TRANSACCIÓN)
+// pago = { metodo, detalle, referencia } (lo que respondió el banco)
 // productos = [{ producto_id, cantidad }] → se manda como texto JSON.
 // El procedimiento termina con sp_ObtenerPedido, que devuelve DOS resultados:
 //   resultados[0] = datos del pedido · resultados[1] = sus productos
-async function crearPedido(usuarioId, ultimos4, productos) {
-  const [resultados] = await pool.query('CALL sp_CrearPedido(?, ?, ?)', [
-    usuarioId, ultimos4, JSON.stringify(productos),
+async function crearPedido(usuarioId, pago, productos) {
+  const [resultados] = await pool.query('CALL sp_CrearPedido(?, ?, ?, ?, ?)', [
+    usuarioId, pago.metodo, pago.detalle, pago.referencia, JSON.stringify(productos),
   ]);
   return { pedido: resultados[0][0], productos: resultados[1] };
 }

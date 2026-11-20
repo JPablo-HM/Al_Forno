@@ -2,7 +2,7 @@
 // Agenda de actividades (quemada en la API) · HU-12
 //
 // La agenda es solo INFORMATIVA y fija: no se compran ni se pagan
-// entradas y el administrador no la edita. Por eso NO está en la base de
+// entradas y nadie la edita desde la app. Por eso NO está en la base de
 // datos. Si cambia una actividad, se cambia aquí.
 //
 // Cada actividad:
