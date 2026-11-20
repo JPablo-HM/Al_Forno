@@ -26,7 +26,6 @@ export const reenviarVerificacion = (correo) =>
 // Devuelve { paso: 'DOBLE_FACTOR', pase, metodos: ['CORREO', 'AUTENTICADOR'?] }
 // Errores: 401 datos incorrectos · 423 bloqueada (error.datos.segundos)
 //          403 sin verificar el correo (error.datos.pendiente)
-//          403 cuenta de administrador (la app es solo para clientes)
 export const login = (correo, contrasena) =>
   pedir('/auth/login', { metodo: 'POST', cuerpo: { correo, contrasena } });
 

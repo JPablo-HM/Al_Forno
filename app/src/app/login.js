@@ -4,9 +4,8 @@
 // Quién la ve: solo visitantes sin sesión (Perfil → "Iniciar sesión", o al
 // tocar algo que pide sesión, como el "+" del menú).
 //
-// Login de clientes (la API no deja entrar al administrador: la app es solo
-// para clientes). El cliente entra en PASOS; la pantalla guarda en qué paso va en el estado "paso" y según ese
-// valor dibuja una parte u otra:
+// Login de clientes. El cliente entra en PASOS; la pantalla guarda en qué
+// paso va en el estado "paso" y según ese valor dibuja una parte u otra:
 //   'CREDENCIALES' → correo y contraseña                     (HU-02)
 //   'METODO'       → elegir correo o Google Authenticator     (HU-21)
 //                    (solo si vinculó Authenticator; si no, se salta)

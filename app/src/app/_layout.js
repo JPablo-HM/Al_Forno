@@ -7,7 +7,7 @@
 //   · Solo sin sesión: Iniciar sesión, Registro y Recuperar contraseña.
 //   · Solo clientes: carrito, pago, mis pedidos, nueva reserva, cambiar
 //     contraseña y Google Authenticator.
-// La app es solo para clientes: la API no deja entrar al administrador.
+// La app es solo para clientes.
 //
 // Cuando la sesión cambia y la pantalla actual deja de estar permitida,
 // Expo Router lleva a la primera pantalla disponible: al iniciar sesión el
