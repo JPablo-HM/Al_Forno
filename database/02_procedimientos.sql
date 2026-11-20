@@ -2,14 +2,14 @@
 --  AL FORNO · Base de datos
 --  02_procedimientos.sql  →  Procedimientos almacenados
 --
---  Versión 2.3 · 11 de noviembre de 2026 (distrito)
+--  Versión 2.4 · 20 de noviembre de 2026 (formas de pago, sin administrador)
 --  Ejecutar después de 01_tablas.sql. Se puede volver a ejecutar sin
 --  borrar datos (cada procedimiento se elimina y se vuelve a crear).
 --
 --  ---------------------------------------------------------------
 --  DÓNDE VIVE CADA REGLA (cada regla en un solo lugar)
 --    · API · validación (express-validator): formato de los datos.
---    · API · middleware: si es cliente o administrador.
+--    · API · middleware: si hay sesión de cliente.
 --    · API · services: reglas del negocio (fechas, horas de reserva,
 --      estado del pedido calculado por tiempo...).
 --    · Procedimientos (este archivo): leer y guardar datos. Casi todos
@@ -54,7 +54,7 @@ DELIMITER $$
 
 
 -- =====================================================================
---  CUENTA  (HU-01, HU-02, HU-14)
+--  CUENTA  (HU-01, HU-02)
 --  Seguridad de la cuenta (HU-20 a HU-24) en las secciones siguientes.
 --
 --  Los datos sensibles llegan YA protegidos desde la API (HU-23):
@@ -131,7 +131,7 @@ BEGIN
   CALL sp_ObtenerUsuario(v_usuario_id);
 END $$
 
--- HU-02 / HU-14 · Datos para iniciar sesión. La API compara la contraseña
+-- HU-02 · Datos para iniciar sesión. La API compara la contraseña
 -- con el hash usando bcrypt y revisa el estado, el bloqueo y la vigencia.
 DROP PROCEDURE IF EXISTS sp_ObtenerUsuarioPorCorreo $$
 CREATE PROCEDURE sp_ObtenerUsuarioPorCorreo(IN p_correo VARCHAR(254))
@@ -152,7 +152,7 @@ DROP PROCEDURE IF EXISTS sp_ObtenerUsuario $$
 CREATE PROCEDURE sp_ObtenerUsuario(IN p_id INT UNSIGNED)
 BEGIN
   -- La ubicación se arma uniendo distrito → canton → provincia → pais.
-  -- LEFT JOIN: el administrador no tiene distrito y aun así debe salir.
+  -- LEFT JOIN: si faltara el distrito, el usuario igual sale.
   SELECT u.id, u.rol, u.nombre_completo, u.cedula, u.telefono, u.correo, u.estado,
          u.authenticator_activo,
          d.nombre AS distrito, c.nombre AS canton, pr.nombre AS provincia, pa.nombre AS pais
@@ -436,7 +436,7 @@ END $$
 
 
 -- =====================================================================
---  PROMOCIONES  (HU-06, HU-17)
+--  PROMOCIONES  (HU-06)
 -- =====================================================================
 
 -- HU-06 · Promociones que ve el cliente (lista vacía → "No hay promociones")
@@ -446,47 +446,13 @@ BEGIN
   SELECT id, titulo, descripcion FROM promocion WHERE activa ORDER BY id DESC;
 END $$
 
--- HU-17 · Todas las promociones (administrador)
-DROP PROCEDURE IF EXISTS sp_ListarPromociones $$
-CREATE PROCEDURE sp_ListarPromociones()
-BEGIN
-  SELECT id, titulo, descripcion, activa FROM promocion ORDER BY activa DESC, id DESC;
-END $$
-
-DROP PROCEDURE IF EXISTS sp_ObtenerPromocion $$
-CREATE PROCEDURE sp_ObtenerPromocion(IN p_id INT UNSIGNED)
-BEGIN
-  SELECT id, titulo, descripcion, activa FROM promocion WHERE id = p_id;
-END $$
-
-DROP PROCEDURE IF EXISTS sp_CrearPromocion $$
-CREATE PROCEDURE sp_CrearPromocion(IN p_titulo VARCHAR(80), IN p_descripcion VARCHAR(500))
-BEGIN
-  INSERT INTO promocion (titulo, descripcion) VALUES (p_titulo, p_descripcion);
-  CALL sp_ObtenerPromocion(LAST_INSERT_ID());
-END $$
-
-DROP PROCEDURE IF EXISTS sp_EditarPromocion $$
-CREATE PROCEDURE sp_EditarPromocion(IN p_id INT UNSIGNED, IN p_titulo VARCHAR(80), IN p_descripcion VARCHAR(500))
-BEGIN
-  UPDATE promocion SET titulo = p_titulo, descripcion = p_descripcion WHERE id = p_id;
-  CALL sp_ObtenerPromocion(p_id);
-END $$
-
--- HU-17 · Activar (TRUE) o desactivar (FALSE)
-DROP PROCEDURE IF EXISTS sp_CambiarEstadoPromocion $$
-CREATE PROCEDURE sp_CambiarEstadoPromocion(IN p_id INT UNSIGNED, IN p_activa BOOLEAN)
-BEGIN
-  UPDATE promocion SET activa = p_activa WHERE id = p_id;
-  CALL sp_ObtenerPromocion(p_id);
-END $$
-
 
 -- =====================================================================
---  MENÚ  (HU-03, HU-15)
+--  MENÚ  (HU-03)
 -- =====================================================================
 
--- HU-03 / HU-15 · Productos activos por categoría. Lo usan el cliente y el admin.
+-- HU-03 · Productos activos por categoría. También lo usa la API para
+-- calcular el total antes de cobrar el pedido.
 DROP PROCEDURE IF EXISTS sp_ListarMenu $$
 CREATE PROCEDURE sp_ListarMenu()
 BEGIN
@@ -496,53 +462,15 @@ BEGIN
    ORDER BY categoria, nombre;   -- categoria sigue el orden del ENUM
 END $$
 
-DROP PROCEDURE IF EXISTS sp_ObtenerProducto $$
-CREATE PROCEDURE sp_ObtenerProducto(IN p_id INT UNSIGNED)
-BEGIN
-  SELECT id, nombre, descripcion, categoria, precio
-    FROM producto
-   WHERE id = p_id AND activo;
-END $$
-
-DROP PROCEDURE IF EXISTS sp_CrearProducto $$
-CREATE PROCEDURE sp_CrearProducto(
-  IN p_nombre VARCHAR(80), IN p_descripcion VARCHAR(300),
-  IN p_categoria VARCHAR(20), IN p_precio INT UNSIGNED)
-BEGIN
-  INSERT INTO producto (nombre, descripcion, categoria, precio)
-  VALUES (p_nombre, p_descripcion, p_categoria, p_precio);
-  CALL sp_ObtenerProducto(LAST_INSERT_ID());
-END $$
-
-DROP PROCEDURE IF EXISTS sp_EditarProducto $$
-CREATE PROCEDURE sp_EditarProducto(
-  IN p_id INT UNSIGNED, IN p_nombre VARCHAR(80), IN p_descripcion VARCHAR(300),
-  IN p_categoria VARCHAR(20), IN p_precio INT UNSIGNED)
-BEGIN
-  UPDATE producto
-     SET nombre = p_nombre, descripcion = p_descripcion,
-         categoria = p_categoria, precio = p_precio
-   WHERE id = p_id AND activo;
-  CALL sp_ObtenerProducto(p_id);
-END $$
-
--- HU-15 · "Eliminar": se desactiva para no afectar los pedidos que ya lo tienen.
--- Devuelve eliminado = 1 si lo encontró, 0 si no existía.
-DROP PROCEDURE IF EXISTS sp_EliminarProducto $$
-CREATE PROCEDURE sp_EliminarProducto(IN p_id INT UNSIGNED)
-BEGIN
-  UPDATE producto SET activo = FALSE WHERE id = p_id AND activo;
-  SELECT ROW_COUNT() AS eliminado;
-END $$
-
 
 -- =====================================================================
 --  PEDIDOS  (HU-07, HU-08, HU-09)
 -- =====================================================================
 
 -- ★ HU-07 / HU-08 · Crea un pedido ya pagado.
--- Antes de llamarlo, la API valida el horario (hasta 30 min antes del
--- cierre), las cantidades (1 a 10) y aprueba el pago simulado.
+-- Antes de llamarlo, la API valida las cantidades (1 a 10) y cobra el
+-- total en el socio Banco Simulado (tarjeta o SINPE Móvil). Aquí llegan
+-- la forma de pago, el detalle que ve el cliente y la referencia del banco.
 -- p_productos: el carrito como texto JSON, por ejemplo:
 --   '[{"producto_id": 1, "cantidad": 2}, {"producto_id": 5, "cantidad": 1}]'
 -- El precio se toma de la tabla producto (no de la app) y se guarda como
@@ -550,7 +478,9 @@ END $$
 DROP PROCEDURE IF EXISTS sp_CrearPedido $$
 CREATE PROCEDURE sp_CrearPedido(
   IN p_usuario_id       INT UNSIGNED,
-  IN p_tarjeta_ultimos4 CHAR(4),
+  IN p_metodo_pago      VARCHAR(20),   -- 'Tarjeta', 'SINPE Móvil' o 'PayPal'
+  IN p_detalle_pago     VARCHAR(60),   -- 'Visa •••• 1111'
+  IN p_referencia_pago  VARCHAR(40),
   IN p_productos        JSON
 )
 BEGIN
@@ -580,8 +510,8 @@ BEGIN
     END IF;
 
     -- 2. El pedido (el total se calcula en el paso 4)
-    INSERT INTO pedido (usuario_id, total, tarjeta_ultimos4)
-    VALUES (p_usuario_id, 0, p_tarjeta_ultimos4);
+    INSERT INTO pedido (usuario_id, total, metodo_pago, detalle_pago, referencia_pago)
+    VALUES (p_usuario_id, 0, p_metodo_pago, p_detalle_pago, p_referencia_pago);
     SET v_pedido_id = LAST_INSERT_ID();
 
     -- 3. Los productos del pedido, con el precio actual
@@ -611,7 +541,7 @@ DROP PROCEDURE IF EXISTS sp_ObtenerPedido $$
 CREATE PROCEDURE sp_ObtenerPedido(IN p_id INT UNSIGNED, IN p_usuario_id INT UNSIGNED)
 BEGIN
   -- El estado no se guarda: la API lo calcula con la fecha del pedido.
-  SELECT pe.id, pe.total, pe.tarjeta_ultimos4, pe.fecha,
+  SELECT pe.id, pe.total, pe.metodo_pago, pe.detalle_pago, pe.referencia_pago, pe.fecha,
          u.nombre_completo AS cliente
     FROM pedido pe
     JOIN usuario u ON u.id = pe.usuario_id

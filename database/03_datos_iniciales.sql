@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  03_datos_iniciales.sql  →  Datos con los que arranca el sistema
 --
---  Versión 2.3 · 11 de noviembre de 2026 (distrito)
+--  Versión 2.4 · 20 de noviembre de 2026 (sin administrador)
 --  Ejecutar después de 01_tablas.sql y 02_procedimientos.sql.
 --
 --  El horario y los datos del restaurante (dirección, teléfono) NO están
@@ -19,26 +19,7 @@ SET time_zone = '-06:00';
 START TRANSACTION;
 
 -- ---------------------------------------------------------------------
--- 1. Cuenta de administrador (HU-14)
---    Las cuentas de administrador solo se crean por script, nunca desde
---    el registro público.
---    Correo: admin@alforno.cr · Contraseña temporal: Cambiar.AlForno2026
---    ⚠ Cámbiela antes de usar el servidor final: genere un hash nuevo con
---      bcrypt (10 rondas) y reemplace el valor de contrasena_hash.
--- ---------------------------------------------------------------------
---    v2.1: queda ACTIVO (no verifica correo) y sin preguntas de seguridad;
---    su forma de entrar no cambia (HU-14). La contraseña temporal ya
---    cumple la política de HU-20 (mayúscula, minúscula, número y símbolo).
-INSERT INTO usuario (rol, nombre_completo, correo, contrasena_hash, estado) VALUES
-  ('ADMIN', 'Administrador AL FORNO', 'admin@alforno.cr',
-   '$2b$10$6Iv2bRlSnRthvQJ92ioUz.s6t5YtyU1zH9hqd/Kn1LHbkDIRwfBbG', 'ACTIVO');
-
--- Su contraseña también queda en el historial (HU-20: no repetir)
-INSERT INTO contrasena_historial (usuario_id, contrasena_hash)
-SELECT id, contrasena_hash FROM usuario WHERE correo = 'admin@alforno.cr';
-
--- ---------------------------------------------------------------------
--- 1b. Preguntas de seguridad (HU-01, HU-22)
+-- 1. Preguntas de seguridad (HU-01, HU-22)
 --     El cliente elige 3 de esta lista al registrarse.
 -- ---------------------------------------------------------------------
 INSERT INTO pregunta_seguridad (texto) VALUES
@@ -49,7 +30,7 @@ INSERT INTO pregunta_seguridad (texto) VALUES
   ('¿Cuál es tu comida favorita?');
 
 -- ---------------------------------------------------------------------
--- 1c. Países, provincias, cantones y distritos (HU-01: ubicación en el registro)
+-- 2. Países, provincias, cantones y distritos (HU-01: ubicación en el registro)
 --     3 países · 13 provincias · 40 cantones · 75 distritos.
 --     Costa Rica: sus 7 provincias, 4 cantones cada una y 2 distritos por cantón.
 --     Panamá: 3 provincias, 2 cantones cada una y 2 distritos por cantón.
@@ -173,7 +154,7 @@ INSERT INTO distrito (canton_id, nombre) VALUES
   (40, 'Nandaime');   -- Nandaime
 
 -- ---------------------------------------------------------------------
--- 2. Productos del menú (HU-03) · 5 por categoría
+-- 3. Productos del menú (HU-03) · 5 por categoría
 --    Actualizado el 13 de octubre de 2026 (carta nueva).
 --    Precios en colones enteros. En el menú salen por categoría y, dentro
 --    de cada una, en orden alfabético (ver sp_ListarMenu).
@@ -201,7 +182,7 @@ INSERT INTO producto (categoria, nombre, descripcion, precio) VALUES
   ('Cervezas',        'Cerveza artesanal costarricense', 'Una opción local diferente. Puedes elegir una IPA o una Pale Ale de una cervecería artesanal nacional, según disponibilidad.', 3500);
 
 -- ---------------------------------------------------------------------
--- 3. Promoción de ejemplo (HU-06). Los días y las fechas van en la
+-- 4. Promoción de ejemplo (HU-06). Los días y las fechas van en la
 --    descripción. Se puede editar o desactivar desde el panel.
 -- ---------------------------------------------------------------------
 INSERT INTO promocion (titulo, descripcion) VALUES

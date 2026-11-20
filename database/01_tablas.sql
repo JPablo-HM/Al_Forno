@@ -2,14 +2,14 @@
 --  AL FORNO · Base de datos
 --  01_tablas.sql  →  Estructura: tablas y llaves
 --
---  Versión 2.3 · 11 de noviembre de 2026 (distrito)
+--  Versión 2.4 · 20 de noviembre de 2026 (formas de pago, sin administrador)
 --  Motor: MySQL 8.0 o superior
---  Basado en: Historias de usuario v2.5
+--  Basado en: Historias de usuario v2.7
 --
 --  Orden de ejecución:
 --    1. 01_tablas.sql             (este archivo)
 --    2. 02_procedimientos.sql     (procedimientos almacenados)
---    3. 03_datos_iniciales.sql    (administrador, preguntas, ubicaciones y menú)
+--    3. 03_datos_iniciales.sql    (preguntas, ubicaciones y menú)
 --
 --  ⚠ Este script BORRA y vuelve a crear la base al_forno.
 --    Úselo solo en desarrollo o en una instalación nueva.
@@ -18,6 +18,11 @@
 -- ---------------------------------------------------------------------
 --  DECISIONES DE DISEÑO (versión 2.0)
 --  · 15 tablas: solo lo que piden las historias de usuario.
+--  · 20 nov 2026 (v2.4): el pedido guarda la forma de pago (Tarjeta,
+--    SINPE Móvil o PayPal), el detalle que ve el cliente ("Visa •••• 1111")
+--    y la referencia del banco. El cobro lo hace el socio Banco Simulado,
+--    que tiene su propia base (socios/banco/banco.sql).
+--    Se quitó el administrador: la app es solo para clientes.
 --  · 11 nov 2026 (v2.3): se agregó el distrito. La cascada queda
 --    pais → provincia → canton → distrito, y usuario guarda distrito_id
 --    (en lugar de canton_id): con el distrito se sabe todo lo demás.
@@ -141,10 +146,10 @@ CREATE TABLE distrito (
 
 
 -- =====================================================================
---  5. USUARIO  (HU-01 Registro, HU-02 Iniciar sesión, HU-14 Administrador,
---               HU-20 Contraseñas, HU-21 Doble factor, HU-23 Datos sensibles)
---  Clientes y administradores en una sola tabla. El administrador no
---  tiene cédula ni teléfono (quedan en NULL).
+--  5. USUARIO  (HU-01 Registro, HU-02 Iniciar sesión, HU-20 Contraseñas,
+--               HU-21 Doble factor, HU-23 Datos sensibles)
+--  Solo clientes. El rol se deja para que la API proteja las rutas con
+--  el middleware soloRol('CLIENTE').
 --
 --  HU-23 · Cómo se protege cada dato (lo hace la API antes de guardar):
 --    · contrasena_hash        → hash bcrypt (no se puede volver atrás)
@@ -158,7 +163,7 @@ CREATE TABLE distrito (
 -- =====================================================================
 CREATE TABLE usuario (
   id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  rol                    ENUM('CLIENTE', 'ADMIN') NOT NULL DEFAULT 'CLIENTE',
+  rol                    ENUM('CLIENTE') NOT NULL DEFAULT 'CLIENTE',
   nombre_completo        VARCHAR(100) NOT NULL,
   cedula                 VARCHAR(100) NULL,      -- cifrada con AES (9 dígitos, lo valida la API)
   cedula_hash            CHAR(64)     NULL,      -- hash de la cédula, para no repetirla
@@ -177,8 +182,7 @@ CREATE TABLE usuario (
   authenticator_secreto  VARCHAR(200) NULL,      -- clave cifrada con AES; NULL = no vinculado
   authenticator_activo   BOOLEAN      NOT NULL DEFAULT FALSE,  -- TRUE cuando confirmó el primer código
   -- HU-01 · Ubicación: solo el distrito (de ahí salen el cantón, la
-  -- provincia y el país). NULL en el administrador; para el cliente es
-  -- obligatorio (lo valida la API).
+  -- provincia y el país). Obligatorio (lo valida la API).
   distrito_id            SMALLINT UNSIGNED NULL,
 
   PRIMARY KEY (id),
@@ -189,7 +193,7 @@ CREATE TABLE usuario (
 
 
 -- =====================================================================
---  6. PRODUCTO  (HU-03 Menú, HU-15 Gestionar menú)
+--  6. PRODUCTO  (HU-03 Menú)
 -- =====================================================================
 CREATE TABLE producto (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -205,7 +209,7 @@ CREATE TABLE producto (
 
 
 -- =====================================================================
---  7. PROMOCION  (HU-06 Promociones, HU-17 Gestionar promociones)
+--  7. PROMOCION  (HU-06 Promociones)
 --  Los días y las fechas de la promoción se escriben en la descripción,
 --  por ejemplo: "Válido martes y jueves hasta el 31 de octubre".
 -- =====================================================================
@@ -220,13 +224,15 @@ CREATE TABLE promocion (
 
 
 -- =====================================================================
---  8. PEDIDO  (HU-07 Pedido, HU-08 Pago, HU-09 Mis pedidos, HU-16 Gestionar)
+--  8. PEDIDO  (HU-07 Pedido, HU-08 Pago, HU-09 Mis pedidos)
 -- =====================================================================
 CREATE TABLE pedido (
   id                INT UNSIGNED NOT NULL AUTO_INCREMENT,   -- número de pedido
   usuario_id        INT UNSIGNED NOT NULL,                  -- el cliente
   total             INT UNSIGNED NOT NULL,                  -- lo que se pagó
-  tarjeta_ultimos4  CHAR(4)      NOT NULL,                  -- se muestra en el comprobante
+  metodo_pago       ENUM('Tarjeta', 'SINPE Móvil', 'PayPal') NOT NULL,
+  detalle_pago      VARCHAR(60)  NOT NULL,   -- se muestra en el comprobante: 'Visa •••• 1111'
+  referencia_pago   VARCHAR(40)  NOT NULL,   -- comprobante del banco o de PayPal
   fecha             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (id),
@@ -234,7 +240,7 @@ CREATE TABLE pedido (
 );
 
 -- Productos de cada pedido. precio_unitario guarda el precio que se pagó:
--- si el administrador cambia el precio después, el comprobante no cambia.
+-- si el precio cambia después, el comprobante no cambia.
 -- El nombre NO se copia: siempre se muestra el nombre actual del producto.
 CREATE TABLE pedido_detalle (
   pedido_id        INT UNSIGNED     NOT NULL,
