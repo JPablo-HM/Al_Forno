@@ -17,3 +17,16 @@ export function formatearFecha(fechaTexto) {
   const hora12 = h % 12 === 0 ? 12 : h % 12;
   return `${d}/${m}/${a} · ${hora12}:${String(min).padStart(2, '0')} ${sufijo}`;
 }
+
+// Número con 2 decimales en formato de Costa Rica (coma para decimales).
+// 446.17 → '446,17'   ·   1234.5 → '1.234,50'
+export function formatearDecimal(numero) {
+  const [entero, decimales] = numero.toFixed(2).split('.');
+  return entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + decimales;
+}
+
+// Monto en colones → su equivalente en dólares con el tipo de cambio de venta.
+// formatearDolares(6500, 446.17) → '$14,57'
+export function formatearDolares(colones, venta) {
+  return '$' + formatearDecimal(colones / venta);
+}

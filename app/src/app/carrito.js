@@ -9,17 +9,27 @@
 // (precio × cantidad), botones − y + para cambiar la cantidad (1 a 10),
 // botón 🗑 para quitarlo, y el total. Todo se actualiza solo porque lee
 // el carrito del contexto.
+// Debajo del total muestra su equivalente en dólares con el tipo de cambio
+// de venta del BCCR (GET /api/tipo-cambio). Si no se puede obtener, no se muestra.
 // =====================================================================
+import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCarrito } from '../context/CarritoContext';
 import { CANTIDAD_MINIMA, CANTIDAD_MAXIMA } from '../utils/carrito';
-import { formatearColones } from '../utils/formato';
+import { formatearColones, formatearDolares, formatearDecimal } from '../utils/formato';
+import { obtenerTipoCambio } from '../services/tipoCambio';
 import Boton from '../components/Boton';
 import { COLORES } from '../config/config';
 
 export default function Carrito() {
   const { productos, total, cambiarCantidad, quitar } = useCarrito();
+  const [tipoCambio, setTipoCambio] = useState(null);
+
+  // Se pide el tipo de cambio una vez. Si falla, se queda en null y no se muestran dólares.
+  useEffect(() => {
+    obtenerTipoCambio().then(setTipoCambio).catch(() => {});
+  }, []);
 
   // Carrito vacío: mensaje y botón para volver al menú
   if (productos.length === 0) {
@@ -68,6 +78,13 @@ export default function Carrito() {
         <Text style={estilos.totalMonto}>{formatearColones(total)}</Text>
       </View>
 
+      {/* Total en dólares (aproximado) con el tipo de cambio de venta del BCCR */}
+      {tipoCambio && (
+        <Text style={estilos.dolares}>
+          ≈ {formatearDolares(total, tipoCambio.venta)} · tipo de cambio ₡{formatearDecimal(tipoCambio.venta)}
+        </Text>
+      )}
+
       <Boton texto="Continuar" href="/resumen-pedido" />
     </ScrollView>
   );
@@ -102,4 +119,5 @@ const estilos = StyleSheet.create({
   totalFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 4 },
   totalTexto: { fontSize: 20, fontWeight: 'bold', color: COLORES.texto },
   totalMonto: { fontSize: 22, fontWeight: 'bold', color: COLORES.terracota },
+  dolares: { textAlign: 'right', color: COLORES.textoSuave, marginBottom: 12 },
 });
