@@ -56,6 +56,9 @@ router.use('/menu', require('./menu/menu.rutas'));
 // Módulo Agenda: GET /api/agenda (información quemada en config/agenda.js)
 router.use('/agenda', require('./agenda/agenda.rutas'));
 
+// Módulo Tipo de cambio (servicio web del BCCR): GET /api/tipo-cambio
+router.use('/tipo-cambio', require('./tipo-cambio/tipo-cambio.rutas'));
+
 // Módulo Pedidos (solo clientes con sesión): POST /api/pedidos, GET /api/pedidos, GET /api/pedidos/:id
 router.use('/pedidos', require('./pedidos/pedidos.rutas'));
 
