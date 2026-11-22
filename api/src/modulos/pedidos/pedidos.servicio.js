@@ -3,6 +3,9 @@ const pedidosRepositorio = require('./pedidos.repositorio');
 const menuRepositorio = require('../menu/menu.repositorio');
 const banco = require('../../utils/banco');
 const paypal = require('../../utils/paypal');
+const socios = require('../../utils/socios');
+const correo = require('../../utils/correo');
+const authRepositorio = require('../auth/auth.repositorio');
 const tipoCambioServicio = require('../tipo-cambio/tipo-cambio.servicio');
 const { segundosDesde } = require('../../utils/tiempo');
 const { errorCon } = require('../../utils/errores');
@@ -23,8 +26,37 @@ function calcularEstado(fecha) {
   };
 }
 
-// Arma el comprobante que recibe la app: datos del pedido + productos + estado.
-function armarComprobante({ pedido, productos }) {
+// Factura electrónica del pedido (socio Facturación electrónica).
+// Se pide la que ya existe; si no tiene, se emite en ese momento. Así, si
+// el socio estaba apagado al pagar, la factura sale la próxima vez que se
+// abra el comprobante. Si el socio no responde, devuelve null ("pendiente"):
+// el pedido ya está pagado y eso no cambia.
+async function facturaDe(pedido) {
+  try {
+    const factura = (await socios.obtenerFactura(pedido.id))
+      ?? (await socios.emitirFactura(pedido.id, pedido.cliente, pedido.total));
+    return { numero: factura.numero, clave: factura.clave };
+  } catch (error) {
+    console.error('Factura del pedido', pedido.id, ':', error.message);
+    return null;
+  }
+}
+
+// Manda la factura al correo del cliente. Si el correo falla, el pago no
+// se afecta: el error queda en la consola y la factura se ve en la app.
+async function enviarFacturaPorCorreo(usuarioId, comprobante) {
+  if (!comprobante.factura) return; // factura pendiente: no hay qué enviar
+  try {
+    const usuario = await authRepositorio.obtenerUsuario(usuarioId);
+    await correo.enviarFactura(usuario.correo, comprobante);
+  } catch (error) {
+    console.error('No se pudo enviar la factura por correo:', error.message);
+  }
+}
+
+// Arma el comprobante que recibe la app: datos del pedido + productos +
+// estado + factura electrónica (null = pendiente).
+async function armarComprobante({ pedido, productos }) {
   return {
     id: pedido.id,
     fecha: pedido.fecha,
@@ -35,6 +67,7 @@ function armarComprobante({ pedido, productos }) {
     cliente: pedido.cliente,
     ...calcularEstado(pedido.fecha),
     productos, // [{ nombre, cantidad, precio_unitario, subtotal }]
+    factura: await facturaDe(pedido), // { numero, clave } o null
   };
 }
 
@@ -57,6 +90,7 @@ async function calcularTotal(productos) {
 // 3. Cobra en el socio Banco Simulado (tarjeta o SINPE Móvil). Si el banco
 //    rechaza, NO se guarda nada (el carrito sigue en la app).
 // 4. Guarda el pedido con la forma de pago y la referencia del banco.
+// 5. Pide la factura al socio Facturación y la manda al correo del cliente.
 // pago = { metodo_pago: 'Tarjeta', tarjeta: {...} } o { metodo_pago: 'SINPE Móvil', telefono }
 // No puede venir el mismo producto dos veces en el carrito.
 function revisarRepetidos(productos) {
@@ -75,9 +109,11 @@ async function crearPedido(usuarioId, productos, pago) {
     ? await banco.pagarConTarjeta(pago.tarjeta, total, descripcion)
     : await banco.pagarConSinpe(pago.telefono, total, descripcion);
 
-  return armarComprobante(await pedidosRepositorio.crearPedido(usuarioId, {
+  const comprobante = await armarComprobante(await pedidosRepositorio.crearPedido(usuarioId, {
     metodo: pago.metodo_pago, detalle: cobro.detalle, referencia: cobro.referencia,
   }, productos));
+  await enviarFacturaPorCorreo(usuarioId, comprobante);
+  return comprobante;
 }
 
 // HU-09 · Mis pedidos, cada uno con su estado calculado.
@@ -133,9 +169,11 @@ async function confirmarPagoPaypal(usuarioId, orden) {
   pagosPaypal.delete(orden);
 
   const detalle = `PayPal · $${pago.dolares.toFixed(2).replace('.', ',')}`; // 'PayPal · $30,26'
-  return armarComprobante(await pedidosRepositorio.crearPedido(usuarioId, {
+  const comprobante = await armarComprobante(await pedidosRepositorio.crearPedido(usuarioId, {
     metodo: 'PayPal', detalle, referencia,
   }, pago.productos));
+  await enviarFacturaPorCorreo(usuarioId, comprobante);
+  return comprobante;
 }
 
 module.exports = { crearPedido, listarMisPedidos, obtenerPedido, iniciarPagoPaypal, confirmarPagoPaypal };

@@ -34,15 +34,14 @@ function escapar(texto) {
 }
 
 // Plantilla sencilla con los colores de AL FORNO.
-function plantilla(titulo, contenido) {
+// pie: el aviso del final (la factura lleva otro, porque no es de seguridad).
+function plantilla(titulo, contenido, pie = 'Si no fuiste vos, ignorá este correo. Nunca te pediremos tu contraseña.') {
   return `
   <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;color:#2b2420">
     <h2 style="color:#b0512f;margin-bottom:4px">AL FORNO</h2>
     <h3 style="margin-top:0">${titulo}</h3>
     ${contenido}
-    <p style="color:#6d6159;font-size:12px;margin-top:24px">
-      Si no fuiste vos, ignorá este correo. Nunca te pediremos tu contraseña.
-    </p>
+    <p style="color:#6d6159;font-size:12px;margin-top:24px">${pie}</p>
   </div>`;
 }
 
@@ -100,4 +99,22 @@ function avisarCambioContrasena(para, nombre) {
   );
 }
 
-module.exports = { enviarVerificacion, enviarCodigo, avisarCambioContrasena };
+// Factura electrónica del pedido pagado (la emite el socio Facturación electrónica).
+// comprobante = el que recibe la app: { id, fecha, total, cliente, metodo_pago, detalle_pago, factura }
+function enviarFactura(para, comprobante) {
+  const { factura } = comprobante;
+  const total = String(comprobante.total).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // 13500 → '13.500'
+  return enviar(
+    para,
+    `AL FORNO · Factura electrónica ${factura.numero}`,
+    plantilla(`Factura electrónica N.º ${factura.numero}`, `
+      <p>Cliente: ${escapar(comprobante.cliente)}<br>Pedido #${comprobante.id} · ${comprobante.fecha}</p>
+      <p style="font-size:18px"><b>Total (IVA incluido): ₡${total}</b></p>
+      <p>Forma de pago: ${comprobante.metodo_pago} · ${escapar(comprobante.detalle_pago)}</p>
+      <p style="font-size:11px;word-break:break-all">Clave: ${factura.clave}</p>`,
+    'Factura emitida por nuestro proveedor de facturación electrónica. Gracias por tu compra.'),
+    `Factura ${factura.numero} · Total ₡${total} · Clave ${factura.clave}`
+  );
+}
+
+module.exports = { enviarVerificacion, enviarCodigo, avisarCambioContrasena, enviarFactura };

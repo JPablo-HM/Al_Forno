@@ -9,9 +9,9 @@ const router = Router();
 
 // Este router se monta en '/api/agenda' (ver modulos/index.js), así que
 // '/' queda como GET /api/agenda.
-// No usa la base de datos (los datos están en config/agenda.js): no necesita async.
-router.get('/', (req, res) => {
-  res.json(agendaServicio.listarAgenda());
+// Los eventos los da el socio Cartelera de eventos: se espera con await.
+router.get('/', async (req, res) => {
+  res.json(await agendaServicio.listarAgenda());
 });
 
 module.exports = router;

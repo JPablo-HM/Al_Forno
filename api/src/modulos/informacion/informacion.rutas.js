@@ -25,4 +25,9 @@ router.get('/promociones', async (req, res) => {
   res.json(await informacionServicio.listarPromociones());
 });
 
+// GET /api/novedades · Cervezas nuevas del socio Cervecería proveedora.
+router.get('/novedades', async (req, res) => {
+  res.json(await informacionServicio.listarNovedades());
+});
+
 module.exports = router;

@@ -28,7 +28,8 @@ const limiteCuenta = rateLimit({
 // Módulo Salud: GET /api/salud (comprueba que la API y MySQL responden)
 router.use(require('./salud/salud.rutas'));
 
-// Módulo Información (pantalla Inicio): GET /api/horario, /api/restaurante, /api/promociones
+// Módulo Información (pantalla Inicio): GET /api/horario, /api/restaurante, /api/promociones,
+// /api/novedades (socio Cervecería)
 router.use(require('./informacion/informacion.rutas'));
 
 // Módulo Cuenta (HU-01, HU-02, HU-20, HU-21): GET /api/auth/preguntas,
@@ -53,7 +54,7 @@ router.use('/perfil', require('./perfil/perfil.rutas'));
 // Módulo Menú: GET /api/menu
 router.use('/menu', require('./menu/menu.rutas'));
 
-// Módulo Agenda: GET /api/agenda (información quemada en config/agenda.js)
+// Módulo Agenda: GET /api/agenda (eventos del socio Cartelera de eventos)
 router.use('/agenda', require('./agenda/agenda.rutas'));
 
 // Módulo Tipo de cambio (servicio web del BCCR): GET /api/tipo-cambio

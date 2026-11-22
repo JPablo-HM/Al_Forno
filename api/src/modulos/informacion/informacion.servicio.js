@@ -1,6 +1,7 @@
 // CAPA LÓGICA DE NEGOCIO (servicio) del módulo Información (HU-04, 05, 06).
 // Decide qué datos salen hacia la app y en qué formato.
 const informacionRepositorio = require('./informacion.repositorio');
+const socios = require('../../utils/socios');
 const { RESTAURANTE, HORARIO } = require('../../config/restaurante');
 
 // HU-04 · Horario de la semana (quemado en config/restaurante.js, ya escrito
@@ -22,4 +23,12 @@ async function listarPromociones() {
   return informacionRepositorio.listarPromocionesActivas();
 }
 
-module.exports = { obtenerHorario, obtenerRestaurante, listarPromociones };
+// Novedades de la cervecería artesanal (socio comercial, socios/cerveceria):
+// las cervezas que tiene disponibles esta semana para la "Cerveza artesanal
+// costarricense" del menú.
+// Devuelve [{ id, nombre, estilo, descripcion }].
+async function listarNovedades() {
+  return socios.listarNovedades();
+}
+
+module.exports = { obtenerHorario, obtenerRestaurante, listarPromociones, listarNovedades };
