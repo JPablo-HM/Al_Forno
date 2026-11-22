@@ -15,3 +15,7 @@ node_modules/
 
 # Python (socios comerciales): carpetas que crea Python al correr
 __pycache__/
+
+# C# .NET (Banco y TSE): carpetas que crea .NET al compilar
+bin/
+obj/

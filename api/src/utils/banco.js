@@ -2,7 +2,7 @@
 // CLIENTE DEL SOCIO "BANCO SIMULADO" (HU-08)
 //
 // El cobro NO lo hace esta API: lo hace el socio comercial Banco Simulado
-// (Python + Flask, carpeta socios/banco/), que tiene su propia base de datos.
+// (C# .NET, carpeta socios/banco/), que tiene su propia base de datos.
 // Aquí solo se le envían los datos por HTTP (fetch) y se lee su respuesta.
 //
 //   POST {BANCO_URL}/pagos/tarjeta  { numero, vencimiento, cvv, monto, descripcion }

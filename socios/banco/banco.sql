@@ -3,7 +3,7 @@
 --  banco.sql  →  Base de datos del banco (aparte de al_forno)
 --
 --  Motor: MySQL 8.0 o superior
---  Lo usa: socios/banco/app.py (Python + Flask, puerto 5001)
+--  Lo usa: socios/banco/Program.cs (C# .NET, puerto 5001)
 --
 --  ⚠ Este script BORRA y vuelve a crear la base banco_simulado.
 --  Es una SIMULACIÓN: los datos son ficticios y no hay dinero real.
