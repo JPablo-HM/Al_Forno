@@ -1,0 +1,17 @@
+<!-- Proyecto del TSE Simulado (C# .NET 10, Minimal API). Se arranca con: dotnet run -->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Conexión a MySQL -->
+    <PackageReference Include="MySqlConnector" Version="2.6.1" />
+    <!-- Lee el archivo .env (usuario y contraseña de MySQL) -->
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
+  </ItemGroup>
+
+</Project>
