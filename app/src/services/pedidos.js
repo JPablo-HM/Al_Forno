@@ -11,6 +11,16 @@ import { pedir } from './api';
 export const crearPedido = (token, productos, pago) =>
   pedir('/pedidos', { metodo: 'POST', cuerpo: { productos, ...pago }, token });
 
+// HU-07 / HU-08 · Pago con PayPal, paso 1 → POST /api/pedidos/paypal
+// Devuelve { orden, link, dolares, venta }: la app abre el link en el navegador.
+export const iniciarPagoPaypal = (token, productos) =>
+  pedir('/pedidos/paypal', { metodo: 'POST', cuerpo: { productos }, token });
+
+// HU-07 / HU-08 · Pago con PayPal, paso 2 → POST /api/pedidos/paypal/confirmar
+// Ya aprobado en PayPal: cobra y devuelve el comprobante (igual que crearPedido).
+export const confirmarPagoPaypal = (token, orden) =>
+  pedir('/pedidos/paypal/confirmar', { metodo: 'POST', cuerpo: { orden }, token });
+
 // HU-09 · Mis pedidos → GET /api/pedidos
 // Devuelve [{ id, fecha, total, estado }] del más reciente al más antiguo
 export const listarMisPedidos = (token) => pedir('/pedidos', { token });

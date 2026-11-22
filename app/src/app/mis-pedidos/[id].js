@@ -10,7 +10,7 @@
 //     cargar sola justo en ese momento (setTimeout).
 //   · El comprobante (HU-08): número, fecha y hora, productos, total,
 //     forma de pago ("Visa •••• 1111" o "Teléfono •••• 1111") y la
-//     referencia del banco. No es factura electrónica.
+//     referencia del banco o de PayPal. No es factura electrónica.
 // =====================================================================
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -107,7 +107,7 @@ export default function DetallePedido() {
           <Text style={estilos.suave}>{pedido.detalle_pago}</Text>
         </View>
         <View style={estilos.fila}>
-          <Text style={estilos.suave}>Referencia del banco</Text>
+          <Text style={estilos.suave}>{pedido.metodo_pago === 'PayPal' ? 'Referencia de PayPal' : 'Referencia del banco'}</Text>
           <Text style={estilos.suave}>{pedido.referencia_pago}</Text>
         </View>
       </View>

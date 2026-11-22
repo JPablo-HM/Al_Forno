@@ -1,5 +1,5 @@
 // =====================================================================
-// PANTALLA · Pago con tarjeta o SINPE Móvil
+// PANTALLA · Pago con tarjeta, SINPE Móvil o PayPal
 // Ruta: /pago   ·   Historia: HU-07, HU-08
 // Quién la ve: solo clientes con sesión iniciada
 // Se llega desde: Resumen del pedido → "Confirmar y pagar"
@@ -13,24 +13,30 @@
 //                   tarjeta exista, que no esté vencida y que tenga saldo.
 //   · SINPE Móvil → teléfono. El banco revisa que esté asociado a una
 //                   cuenta con saldo.
+//   · PayPal      → en 2 pasos: "Pagar con PayPal" abre la página de PayPal
+//                   (Sandbox) en el navegador; el cliente aprueba ahí, vuelve
+//                   y toca "Confirmar pago". Se cobra en dólares con el tipo
+//                   de cambio de venta del BCCR.
 //   · Aprobado  → se vacía el carrito y se abre el comprobante.
 //   · Rechazado → se muestra el motivo del banco y el carrito se conserva.
 // La tarjeta nunca se guarda en AL FORNO: solo la marca y los últimos 4.
 // =====================================================================
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { useCarrito } from '../context/CarritoContext';
 import { useSesion } from '../context/SesionContext';
-import { crearPedido } from '../services/pedidos';
+import { crearPedido, iniciarPagoPaypal, confirmarPagoPaypal } from '../services/pedidos';
+import { obtenerTipoCambio } from '../services/tipoCambio';
 import CampoFormulario from '../components/CampoFormulario';
 import Opcion from '../components/Opcion';
 import Boton from '../components/Boton';
-import { formatearColones } from '../utils/formato';
+import { formatearColones, formatearDolares, formatearDecimal } from '../utils/formato';
 import { COLORES } from '../config/config';
 
-const METODOS = ['Tarjeta', 'SINPE Móvil'];
+const METODOS = ['Tarjeta', 'SINPE Móvil', 'PayPal'];
 const VACIO = { numero: '', vencimiento: '', cvv: '', telefono: '' };
 
 // Marca según los primeros dígitos (solo para mostrarla mientras se
@@ -54,7 +60,7 @@ function validar(metodo, d) {
     if (!/^\d{15,16}$/.test(numero)) errores.numero = 'El número debe tener 15 o 16 dígitos';
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(d.vencimiento)) errores.vencimiento = 'Usa el formato MM/AA';
     if (!(amex ? /^\d{4}$/ : /^\d{3}$/).test(d.cvv)) errores.cvv = amex ? 'Tiene 4 dígitos' : 'Tiene 3 dígitos';
-  } else if (!/^\d{8}$/.test(d.telefono.replace(/[\s-]/g, ''))) {
+  } else if (metodo === 'SINPE Móvil' && !/^\d{8}$/.test(d.telefono.replace(/[\s-]/g, ''))) {
     errores.telefono = 'El teléfono debe tener 8 dígitos';
   }
   return errores;
@@ -73,6 +79,13 @@ export default function Pago() {
   const [errores, setErrores] = useState({});
   const [rechazo, setRechazo] = useState(null); // motivo del rechazo o error general
   const [enviando, setEnviando] = useState(false);
+  const [tipoCambio, setTipoCambio] = useState(null); // para mostrar cuánto se cobra en dólares
+  const [ordenPaypal, setOrdenPaypal] = useState(null); // { orden, link, dolares } tras abrir PayPal
+
+  // Se pide el tipo de cambio una vez (solo se usa con PayPal).
+  useEffect(() => {
+    obtenerTipoCambio().then(setTipoCambio).catch(() => {});
+  }, []);
 
   const marca = marcaDe(datos.numero.replace(/\s/g, ''));
 
@@ -85,6 +98,7 @@ export default function Pago() {
     setMetodo(nuevo);
     setErrores({});
     setRechazo(null);
+    setOrdenPaypal(null);
   }
 
   // Al escribir el vencimiento, pone la "/" sola: '1228' → '12/28'
@@ -109,19 +123,52 @@ export default function Pago() {
       const pago = metodo === 'Tarjeta'
         ? { metodo_pago: metodo, tarjeta: { numero: datos.numero, vencimiento: datos.vencimiento, cvv: datos.cvv } }
         : { metodo_pago: metodo, telefono: datos.telefono };
-      const comprobante = await crearPedido(token, carrito, pago);
-
-      vaciar();
-      // Se cierran Carrito, Resumen y Pago, y se abre el comprobante.
-      // Así la flecha "atrás" vuelve al Menú y no a un pago ya hecho.
-      if (router.canDismiss()) router.dismissAll();
-      router.push(`/mis-pedidos/${comprobante.id}`);
+      terminar(await crearPedido(token, carrito, pago));
     } catch (e) {
       // Error de un campo → se marca ese campo. Rechazo del banco u otro
       // error → recuadro arriba. En ambos casos el carrito se conserva.
       const campo = nombreCampo(e.campo);
       if (campo && campo in VACIO) setErrores({ [campo]: e.message });
       else setRechazo(e.message);
+      setEnviando(false);
+    }
+  }
+
+  // Pago aprobado: se vacía el carrito y se abre el comprobante.
+  // Se cierran Carrito, Resumen y Pago, así la flecha "atrás" vuelve al
+  // Menú y no a un pago ya hecho.
+  function terminar(comprobante) {
+    vaciar();
+    if (router.canDismiss()) router.dismissAll();
+    router.push(`/mis-pedidos/${comprobante.id}`);
+  }
+
+  // PayPal · paso 1: la API crea la orden y se abre la página de PayPal.
+  async function alPagarConPaypal() {
+    if (enviando) return;
+    setRechazo(null);
+    setEnviando(true);
+    try {
+      const carrito = productos.map((p) => ({ producto_id: p.id, cantidad: p.cantidad }));
+      const orden = await iniciarPagoPaypal(token, carrito);
+      setOrdenPaypal(orden);
+      Linking.openURL(orden.link);
+    } catch (e) {
+      setRechazo(e.message);
+    }
+    setEnviando(false);
+  }
+
+  // PayPal · paso 2: el cliente ya aprobó en PayPal → se cobra y se crea el pedido.
+  async function alConfirmarPaypal() {
+    if (enviando) return;
+    setRechazo(null);
+    setEnviando(true);
+    try {
+      terminar(await confirmarPagoPaypal(token, ordenPaypal.orden));
+    } catch (e) {
+      // Si no aprobó, se puede volver a abrir PayPal o confirmar de nuevo.
+      setRechazo(e.message);
       setEnviando(false);
     }
   }
@@ -201,7 +248,7 @@ export default function Pago() {
             </View>
           </View>
         </>
-      ) : (
+      ) : metodo === 'SINPE Móvil' ? (
         <>
           <CampoFormulario
             etiqueta="TELÉFONO CON SINPE MÓVIL"
@@ -215,21 +262,75 @@ export default function Pago() {
           />
           <Text style={estilos.ayuda}>El monto se rebaja de la cuenta asociada a ese número.</Text>
         </>
+      ) : (
+        // PayPal: cobra en dólares con el tipo de cambio de venta del BCCR
+        <View style={estilos.paypal}>
+          <Text style={estilos.paypalMonto}>
+            Se cobrará {ordenPaypal
+              ? `$${formatearDecimal(ordenPaypal.dolares)}`
+              : tipoCambio ? `≈ ${formatearDolares(total, tipoCambio.venta)}` : 'en dólares'}
+          </Text>
+          {tipoCambio ? (
+            <Text style={estilos.ayuda}>Tipo de cambio BCCR (venta): ₡{formatearDecimal(tipoCambio.venta)}</Text>
+          ) : null}
+          {ordenPaypal ? (
+            <Text style={estilos.paypalPaso}>
+              Aprueba el pago en la página de PayPal que se abrió y luego vuelve aquí y toca "Confirmar pago".
+            </Text>
+          ) : null}
+        </View>
       )}
 
-      <Pressable
-        onPress={alPagar}
-        disabled={enviando}
-        style={({ pressed }) => [estilos.boton, (pressed || enviando) && { opacity: 0.7 }]}
-      >
-        <Text style={estilos.botonTexto}>{enviando ? 'PROCESANDO…' : `PAGAR ${formatearColones(total)}`}</Text>
-      </Pressable>
+      {metodo !== 'PayPal' ? (
+        <BotonPrincipal
+          texto={enviando ? 'PROCESANDO…' : `PAGAR ${formatearColones(total)}`}
+          onPress={alPagar}
+          deshabilitado={enviando}
+        />
+      ) : !ordenPaypal ? (
+        <BotonPrincipal
+          texto={enviando ? 'ABRIENDO PAYPAL…' : 'PAGAR CON PAYPAL'}
+          onPress={alPagarConPaypal}
+          deshabilitado={enviando}
+        />
+      ) : (
+        <>
+          <BotonPrincipal
+            texto={enviando ? 'CONFIRMANDO…' : 'CONFIRMAR PAGO'}
+            onPress={alConfirmarPaypal}
+            deshabilitado={enviando}
+          />
+          <Pressable onPress={() => Linking.openURL(ordenPaypal.link)} style={estilos.enlace}>
+            <Text style={estilos.enlaceTexto}>Volver a abrir PayPal</Text>
+          </Pressable>
+          <Pressable onPress={() => { setOrdenPaypal(null); setRechazo(null); }} style={estilos.enlace}>
+            <Text style={estilos.enlaceTexto}>Cancelar</Text>
+          </Pressable>
+        </>
+      )}
 
       <View style={estilos.aviso}>
         <Ionicons name="shield-checkmark-outline" size={16} color={COLORES.textoSuave} />
-        <Text style={estilos.avisoTexto}>Pago simulado con el Banco Simulado: no se cobra dinero real.</Text>
+        <Text style={estilos.avisoTexto}>
+          {metodo === 'PayPal'
+            ? 'Pago de prueba en PayPal Sandbox: no se cobra dinero real.'
+            : 'Pago simulado con el Banco Simulado: no se cobra dinero real.'}
+        </Text>
       </View>
     </ScrollView>
+  );
+}
+
+// Botón grande terracota (Pagar, Pagar con PayPal, Confirmar pago). Se usa solo en esta pantalla.
+function BotonPrincipal({ texto, onPress, deshabilitado }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={deshabilitado}
+      style={({ pressed }) => [estilos.boton, (pressed || deshabilitado) && { opacity: 0.7 }]}
+    >
+      <Text style={estilos.botonTexto}>{texto}</Text>
+    </Pressable>
   );
 }
 
@@ -252,6 +353,11 @@ const estilos = StyleSheet.create({
   mitad: { flex: 1 },
   boton: { backgroundColor: COLORES.terracota, borderRadius: 8, paddingVertical: 16, marginTop: 28 },
   botonTexto: { color: '#FFFFFF', fontWeight: 'bold', letterSpacing: 1.5, textAlign: 'center', fontSize: 15 },
+  paypal: { backgroundColor: COLORES.cremaClara, borderRadius: 8, padding: 16, marginTop: 16 },
+  paypalMonto: { fontSize: 18, fontWeight: 'bold', color: COLORES.texto },
+  paypalPaso: { color: COLORES.texto, marginTop: 12, lineHeight: 20 },
+  enlace: { paddingVertical: 12, alignItems: 'center' },
+  enlaceTexto: { color: COLORES.terracota, fontWeight: 'bold' },
   aviso: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 14 },
   avisoTexto: { color: COLORES.textoSuave, fontSize: 12, flexShrink: 1 },
   vacio: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: COLORES.crema },
