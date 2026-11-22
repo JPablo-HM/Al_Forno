@@ -67,7 +67,7 @@ export default function Perfil() {
         ) : perfil ? (
           <>
             <Text style={estilos.nombre}>{perfil.nombre_completo}</Text>
-            <Dato icono="card-outline" etiqueta="Cédula" valor={perfil.cedula} />
+            <Dato icono="card-outline" etiqueta="Identificación" valor={perfil.cedula} />
             <Dato icono="call-outline" etiqueta="Teléfono" valor={perfil.telefono} />
             {/* HU-01 · Ubicación */}
             {perfil.pais ? (

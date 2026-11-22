@@ -11,9 +11,15 @@ import { pedir } from './api';
 // Devuelve [{ id, texto }]
 export const obtenerPreguntas = () => pedir('/auth/preguntas');
 
+// HU-01 · Botón "Buscar": nombre según el TSE → GET /api/auth/identificacion
+// tipo = 'cedula' | 'dimex' | 'pasaporte'. Devuelve { nombre_completo }.
+export const consultarIdentificacion = (tipo, numero) =>
+  pedir(`/auth/identificacion?tipo_identificacion=${encodeURIComponent(tipo)}&identificacion=${encodeURIComponent(numero)}`);
+
 // HU-01 · Crear cuenta → POST /api/auth/registro
-// datos = { nombre_completo, cedula, telefono, distrito_id, correo, contrasena,
-//           confirmacion, respuestas: [{ pregunta_id, respuesta }, ×3] }
+// datos = { tipo_identificacion, identificacion, telefono, distrito_id, correo,
+//           contrasena, confirmacion, respuestas: [{ pregunta_id, respuesta }, ×3] }
+// El nombre no se envía: la API lo toma del TSE.
 // Devuelve { correo, mensaje }. NO inicia sesión: primero hay que
 // confirmar el correo con el link que envía la API.
 export const registrar = (datos) => pedir('/auth/registro', { metodo: 'POST', cuerpo: datos });

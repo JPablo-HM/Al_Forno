@@ -5,13 +5,18 @@
 // Se llega desde: Perfil → "Crear cuenta" o el enlace "Registrate" del login
 //
 // Tiene DOS vistas según el estado "enviado":
-//   1. El formulario: datos personales, ubicación (país, provincia,
+//   1. El formulario: identificación (el nombre lo da el TSE Simulado),
+//      datos personales, ubicación (país, provincia,
 //      cantón y distrito), contraseña con la política en vivo (lista con ✓, HU-20) y
 //      3 preguntas de seguridad con su respuesta.
 //   2. "Revisá tu correo": la cuenta queda Pendiente de verificación hasta
 //      que el cliente abra el link del correo (HU-01). NO inicia sesión.
 //
 // Datos: GET /api/auth/preguntas y POST /api/auth/registro (services/auth.js).
+// Identificación (HU-01): el cliente elige Cédula, DIMEX o Pasaporte, escribe
+// el número y toca "Buscar". La API le pregunta al TSE Simulado y el nombre
+// aparece en una caja bloqueada (no se puede editar). Al crear la cuenta la
+// API vuelve a consultar al TSE: el nombre guardado siempre es el del TSE.
 // Ubicación (services/ubicacion.js): las 4 cajas se llenan en cascada. Cada
 // lista se pide a la API solo cuando hace falta y se actualiza SOLO esa
 // caja, sin recargar la pantalla:
@@ -21,12 +26,12 @@
 //   1. Aquí, antes de enviar, para avisar rápido campo por campo.
 //   2. En la API (express-validator), que es la que manda: aunque alguien
 //      se salte la app, la API no acepta datos inválidos.
-// La API además revisa que el correo y la cédula no estén repetidos (409).
+// La API además revisa que el correo y la identificación no estén repetidos (409).
 // =====================================================================
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { obtenerPreguntas, registrar, reenviarVerificacion } from '../services/auth';
+import { obtenerPreguntas, registrar, reenviarVerificacion, consultarIdentificacion } from '../services/auth';
 import { listarPaises, listarProvincias, listarCantones, listarDistritos } from '../services/ubicacion';
 import CampoFormulario from '../components/CampoFormulario';
 import ListaPolitica from '../components/ListaPolitica';
@@ -40,16 +45,23 @@ import { COLORES } from '../config/config';
 // Campos del formulario. Todos empiezan vacíos.
 // distrito_id: lo único de la ubicación que se envía (de él salen el cantón,
 // la provincia y el país).
-const VACIO = { nombre_completo: '', cedula: '', telefono: '', distrito_id: null, correo: '', contrasena: '', confirmacion: '' };
+const VACIO = { tipo_identificacion: 'cedula', identificacion: '', telefono: '', distrito_id: null, correo: '', contrasena: '', confirmacion: '' };
+
+// Tipos de identificación que acepta el TSE (id = lo que se envía a la API)
+const TIPOS = [
+  { id: 'cedula', texto: 'Cédula', ayuda: '9 dígitos, sin guiones' },
+  { id: 'dimex', texto: 'DIMEX', ayuda: '11 o 12 dígitos' },
+  { id: 'pasaporte', texto: 'Pasaporte', ayuda: 'Letras y números' },
+];
 
 // HU-01 · Revisa los datos y devuelve { campo: 'mensaje' } con los errores.
 // respuestas = [{ pregunta_id, respuesta }] con las preguntas elegidas.
+// nombre = el que dio el TSE (null si todavía no se buscó).
 // Si devuelve un objeto vacío, todo está bien.
-function validarFormulario(f, respuestas) {
+function validarFormulario(f, respuestas, nombre) {
   const errores = {};
-  if (!f.nombre_completo.trim()) errores.nombre_completo = 'Escribe tu nombre completo';
-  // /^\d{9}$/ = exactamente 9 dígitos, nada más
-  if (!/^\d{9}$/.test(f.cedula)) errores.cedula = 'La cédula debe tener 9 dígitos';
+  // El formato de cada tipo lo revisa el TSE: aquí solo que se haya buscado
+  if (!nombre) errores.identificacion = 'Escribe tu identificación y toca "Buscar"';
   if (!/^\d{8}$/.test(f.telefono)) errores.telefono = 'El teléfono debe tener 8 dígitos';
   if (!f.distrito_id) errores.distrito_id = 'Elige tu país, provincia, cantón y distrito';
   // algo@algo.algo
@@ -66,6 +78,8 @@ function validarFormulario(f, respuestas) {
 export default function Registro() {
   const router = useRouter();
   const [form, setForm] = useState(VACIO);
+  const [nombre, setNombre] = useState(null);         // nombre según el TSE (null = sin buscar)
+  const [buscando, setBuscando] = useState(false);
   const [preguntas, setPreguntas] = useState([]);     // las de la API: [{ id, texto }]
   const [respuestas, setRespuestas] = useState([]);   // las elegidas: [{ pregunta_id, respuesta }]
   const [errores, setErrores] = useState({});         // errores por campo
@@ -147,8 +161,41 @@ export default function Registro() {
     setErrores((actual) => ({ ...actual, distrito_id: null }));
   }
 
+  // Elegir el tipo de identificación: el nombre buscado ya no sirve.
+  function alElegirTipo(id) {
+    setForm((actual) => ({ ...actual, tipo_identificacion: id }));
+    setNombre(null);
+    setErrores((actual) => ({ ...actual, identificacion: null }));
+  }
+
+  // Escribir el número: si cambia, hay que volver a buscar el nombre.
+  function alCambiarIdentificacion(texto) {
+    setForm((actual) => ({ ...actual, identificacion: texto }));
+    setNombre(null);
+    setErrores((actual) => ({ ...actual, identificacion: null }));
+  }
+
+  // Botón "Buscar": la API le pregunta al TSE Simulado el nombre.
+  async function alBuscar() {
+    if (buscando) return;
+    if (!form.identificacion.trim()) {
+      setErrores((actual) => ({ ...actual, identificacion: 'Escribe tu número de identificación' }));
+      return;
+    }
+    setBuscando(true);
+    try {
+      const persona = await consultarIdentificacion(form.tipo_identificacion, form.identificacion.trim());
+      setNombre(persona.nombre_completo);
+    } catch (e) {
+      // No existe, formato incorrecto o el TSE no responde
+      setErrores((actual) => ({ ...actual, identificacion: e.message }));
+    } finally {
+      setBuscando(false);
+    }
+  }
+
   // Devuelve la función que actualiza UN campo y borra su error.
-  // Ej.: cambiar('cedula') → (texto) => guarda texto en form.cedula
+  // Ej.: cambiar('telefono') → (texto) => guarda texto en form.telefono
   const cambiar = (campo) => (texto) => {
     setForm((actual) => ({ ...actual, [campo]: texto }));
     setErrores((actual) => ({ ...actual, [campo]: null }));
@@ -177,7 +224,7 @@ export default function Registro() {
     setErrorGeneral(null);
 
     // 1. Revisión en la app: si algo está mal, se marca y no se envía.
-    const encontrados = validarFormulario(form, respuestas);
+    const encontrados = validarFormulario(form, respuestas, nombre);
     if (Object.keys(encontrados).length > 0) {
       setErrores(encontrados);
       return;
@@ -193,6 +240,7 @@ export default function Registro() {
       // Si no (ej. "Ese correo ya está registrado" o sin conexión), el
       // mensaje se muestra junto al botón.
       if (e.campo?.startsWith('respuestas')) setErrores({ respuestas: e.message });
+      else if (e.campo === 'tipo_identificacion') setErrores({ identificacion: e.message });
       else if (e.campo) setErrores({ [e.campo]: e.message });
       else setErrorGeneral(e.message);
     } finally {
@@ -239,23 +287,38 @@ export default function Registro() {
       <Text style={estilos.titulo}>Crear cuenta</Text>
       <Text style={estilos.subtitulo}>Tus datos quedan guardados para tus pedidos y reservas.</Text>
 
+      {/* HU-01: identificación. El nombre lo da el TSE Simulado. */}
+      <Text style={estilos.etiqueta}>TIPO DE IDENTIFICACIÓN</Text>
+      <View style={estilos.tipos}>
+        {TIPOS.map((t) => (
+          <View key={t.id} style={estilos.tipo}>
+            <Opcion texto={t.texto} seleccionada={form.tipo_identificacion === t.id} onPress={() => alElegirTipo(t.id)} />
+          </View>
+        ))}
+      </View>
+      <CampoFormulario
+        etiqueta="NÚMERO DE IDENTIFICACIÓN"
+        value={form.identificacion}
+        onChangeText={alCambiarIdentificacion}
+        placeholder={TIPOS.find((t) => t.id === form.tipo_identificacion).ayuda}
+        keyboardType={form.tipo_identificacion === 'pasaporte' ? 'default' : 'number-pad'}
+        autoCapitalize="characters"
+        maxLength={12}
+        error={errores.identificacion}
+      />
+      <Boton
+        texto={buscando ? 'Buscando…' : 'Buscar en el TSE'}
+        variante="secundario"
+        onPress={alBuscar}
+        deshabilitado={buscando}
+      />
       <CampoFormulario
         etiqueta="NOMBRE COMPLETO"
-        value={form.nombre_completo}
-        onChangeText={cambiar('nombre_completo')}
-        placeholder="Nombre y apellidos"
-        autoCapitalize="words"
-        error={errores.nombre_completo}
+        value={nombre ?? ''}
+        placeholder="Se completa con el TSE"
+        editable={false}
       />
-      <CampoFormulario
-        etiqueta="CÉDULA"
-        value={form.cedula}
-        onChangeText={cambiar('cedula')}
-        placeholder="9 dígitos, sin guiones"
-        keyboardType="number-pad"
-        maxLength={9}
-        error={errores.cedula}
-      />
+      {nombre ? <Text style={estilos.nota}>Según el TSE. No se puede editar.</Text> : null}
       <CampoFormulario
         etiqueta="TELÉFONO"
         value={form.telefono}
@@ -385,6 +448,9 @@ const estilos = StyleSheet.create({
   contenedor: { padding: 24, paddingTop: 32, paddingBottom: 48 },
   titulo: { fontSize: 30, fontWeight: 'bold', color: COLORES.texto },
   subtitulo: { color: COLORES.textoSuave, marginTop: 6, marginBottom: 8, fontSize: 15 },
+  etiqueta: { fontSize: 12, fontWeight: 'bold', letterSpacing: 1.5, color: COLORES.texto, marginTop: 16, marginBottom: 8 },
+  tipos: { flexDirection: 'row', gap: 8 },
+  tipo: { flex: 1 },
   seccion: { fontSize: 12, fontWeight: 'bold', letterSpacing: 1.5, color: COLORES.terracota, marginTop: 28 },
   nota: { color: COLORES.textoSuave, marginTop: 8, fontSize: 14 },
   preguntas: { gap: 8, marginTop: 12 },
