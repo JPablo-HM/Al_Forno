@@ -11,6 +11,7 @@
 //   · Horario       (HU-04) → components/SeccionHorario.js      (GET /api/horario)
 //   · Ubicación     (HU-05) → components/SeccionUbicacion.js    (GET /api/restaurante)
 //   · Promociones   (HU-06) → components/SeccionPromociones.js  (GET /api/promociones)
+//   · Novedades cervecería  → components/SeccionNovedades.js    (GET /api/novedades, socio)
 //   · Tipo de cambio        → components/SeccionTipoCambio.js   (GET /api/tipo-cambio, BCCR)
 // La portada va de borde a borde; las tarjetas van dentro de un margen.
 // =====================================================================
@@ -19,6 +20,7 @@ import SeccionPortada from '../../components/SeccionPortada';
 import SeccionHorario from '../../components/SeccionHorario';
 import SeccionUbicacion from '../../components/SeccionUbicacion';
 import SeccionPromociones from '../../components/SeccionPromociones';
+import SeccionNovedades from '../../components/SeccionNovedades';
 import SeccionTipoCambio from '../../components/SeccionTipoCambio';
 import { COLORES } from '../../config/config';
 
@@ -30,6 +32,7 @@ export default function Inicio() {
         <SeccionHorario />
         <SeccionUbicacion />
         <SeccionPromociones />
+        <SeccionNovedades />
         <SeccionTipoCambio />
       </View>
     </ScrollView>

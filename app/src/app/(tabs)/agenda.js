@@ -5,7 +5,8 @@
 // Se llega desde: pestaña "Agenda" del menú inferior
 // Lleva a: ninguna (es solo informativa)
 //
-// Pide la agenda a la API (GET /api/agenda). Por ahora es SOLO
+// Pide la agenda a la API (GET /api/agenda), que la toma del socio
+// comercial Cartelera de eventos (la productora de los artistas). Es SOLO
 // INFORMATIVA: muestra qué actividad hay cada día; no se compran ni se
 // pagan entradas. Cada actividad es una tarjeta con los días, el nombre
 // y la descripción. Todas se ven iguales (no se resalta el día de hoy).

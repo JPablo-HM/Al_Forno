@@ -10,7 +10,9 @@
 //     cargar sola justo en ese momento (setTimeout).
 //   · El comprobante (HU-08): número, fecha y hora, productos, total,
 //     forma de pago ("Visa •••• 1111" o "Teléfono •••• 1111") y la
-//     referencia del banco o de PayPal. No es factura electrónica.
+//     referencia del banco o de PayPal.
+//   · La factura electrónica (número y clave) que emite el socio
+//     Facturación electrónica. Si no respondió, dice "Factura pendiente".
 // =====================================================================
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
@@ -110,9 +112,20 @@ export default function DetallePedido() {
           <Text style={estilos.suave}>{pedido.metodo_pago === 'PayPal' ? 'Referencia de PayPal' : 'Referencia del banco'}</Text>
           <Text style={estilos.suave}>{pedido.referencia_pago}</Text>
         </View>
-      </View>
 
-      <Text style={estilos.nota}>Este comprobante no es una factura electrónica.</Text>
+        {/* Factura electrónica (la emite el socio Facturación electrónica) */}
+        <View style={estilos.separador} />
+        <Text style={estilos.etiqueta}>FACTURA ELECTRÓNICA</Text>
+        {pedido.factura ? (
+          <>
+            <Text style={estilos.texto}>N.º {pedido.factura.numero}</Text>
+            <Text style={estilos.clave}>Clave: {pedido.factura.clave}</Text>
+            <Text style={estilos.suave}>Te enviamos la factura a tu correo.</Text>
+          </>
+        ) : (
+          <Text style={estilos.suave}>Factura pendiente: se emitirá cuando el servicio de facturación responda.</Text>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -134,6 +147,6 @@ const estilos = StyleSheet.create({
   separador: { height: 1, backgroundColor: COLORES.crema, marginVertical: 12 },
   texto: { color: COLORES.texto, fontSize: 15, flexShrink: 1 },
   totalTexto: { fontSize: 17, fontWeight: 'bold', color: COLORES.texto },
-  nota: { color: COLORES.textoSuave, fontSize: 12, textAlign: 'center', marginTop: 12 },
+  clave: { color: COLORES.textoSuave, fontSize: 12, marginTop: 4 },
   error: { color: COLORES.terracotaOscuro, textAlign: 'center' },
 });

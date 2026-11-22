@@ -13,3 +13,7 @@ export const obtenerRestaurante = () => pedir('/restaurante');
 // HU-06 · Promociones → GET /api/promociones
 // Devuelve [{ id, titulo, descripcion }] (puede venir vacía)
 export const listarPromociones = () => pedir('/promociones');
+
+// Novedades de la cervecería proveedora (socio comercial) → GET /api/novedades
+// Devuelve [{ id, nombre, estilo, descripcion }]
+export const listarNovedades = () => pedir('/novedades');
