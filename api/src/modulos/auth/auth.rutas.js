@@ -3,8 +3,9 @@
 // Cada ruta: primero las validaciones de los datos (express-validator),
 // luego validar (responde 400 si algo está mal) y al final el servicio.
 const { Router } = require('express');
-const { body } = require('express-validator');
+const { body, query } = require('express-validator');
 const authServicio = require('./auth.servicio');
+const { TIPOS_IDENTIFICACION } = require('../../utils/tse');
 const validar = require('../../middlewares/validar');
 const { verificarPase } = require('../../middlewares/autenticacion');
 const { contrasenaSegura, confirmacionIgual, codigoSeisDigitos } = require('../../middlewares/reglasCuenta');
@@ -18,15 +19,30 @@ router.get('/preguntas', async (req, res) => {
   res.json(await authServicio.listarPreguntas());
 });
 
+// Tipo y número de identificación (registro y botón "Buscar").
+// Aquí solo se revisa que vengan: el formato de cada tipo lo revisa el TSE.
+const reglaTipo = (campo) => campo('tipo_identificacion').isIn(TIPOS_IDENTIFICACION)
+  .withMessage('Elige el tipo de identificación');
+const reglaNumero = (campo) => campo('identificacion').trim().toUpperCase().notEmpty()
+  .withMessage('Escribe tu número de identificación')
+  .isLength({ max: 12 }).withMessage('La identificación es muy larga');
+
+// GET /api/auth/identificacion?tipo_identificacion=&identificacion= (HU-01) · Público
+// Botón "Buscar" del registro: pregunta al TSE Simulado el nombre de la
+// persona. Responde { nombre_completo }.
+router.get('/identificacion', reglaTipo(query), reglaNumero(query), validar, async (req, res) => {
+  res.json(await authServicio.consultarIdentificacion(req.query.tipo_identificacion, req.query.identificacion));
+});
+
 // POST /api/auth/registro (HU-01) · Público
-// Cuerpo: { nombre_completo, cedula, telefono, distrito_id, correo, contrasena,
-//           confirmacion, respuestas: [{ pregunta_id, respuesta }, ×3] }
+// Cuerpo: { tipo_identificacion, identificacion, telefono, distrito_id, correo,
+//           contrasena, confirmacion, respuestas: [{ pregunta_id, respuesta }, ×3] }
+// El nombre NO viene de la app: el servicio lo pide al TSE con la identificación.
 // trim() quita espacios al inicio y al final antes de validar.
 router.post(
   '/registro',
-  body('nombre_completo').trim().notEmpty().withMessage('Escribe tu nombre completo')
-    .isLength({ max: 100 }).withMessage('El nombre es muy largo'),
-  body('cedula').trim().matches(/^\d{9}$/).withMessage('La cédula debe tener 9 dígitos'),
+  reglaTipo(body),
+  reglaNumero(body),
   body('telefono').trim().matches(/^\d{8}$/).withMessage('El teléfono debe tener 8 dígitos'),
   // Ubicación: solo llega el distrito (el cantón, la provincia y el país
   // salen de él). Si no existe en la base, sp_RegistrarUsuario responde 400.

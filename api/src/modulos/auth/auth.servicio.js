@@ -15,6 +15,7 @@ const authRepositorio = require('./auth.repositorio');
 const seguridad = require('./seguridad.servicio');
 const { cifrar, hashCedula, hashCodigo, generarCodigo, generarTokenLink } = require('../../utils/cifrado');
 const correo = require('../../utils/correo');
+const tse = require('../../utils/tse');
 const {
   MINUTOS_LINK_VERIFICACION, MINUTOS_CODIGO_CORREO,
 } = require('../../config/seguridad');
@@ -43,14 +44,26 @@ async function enviarLinkVerificacion(usuario) {
   await correo.enviarVerificacion(usuario.correo, usuario.nombre_completo, link);
 }
 
+// HU-01 · Botón "Buscar" del registro: nombre de la persona según el TSE.
+async function consultarIdentificacion(tipo, numero) {
+  const persona = await tse.consultarPersona(tipo, numero);
+  return { nombre_completo: persona.nombre_completo };
+}
+
 // HU-01 · Registro. La cuenta queda PENDIENTE: NO inicia sesión.
-// datos: { nombre_completo, cedula, telefono, distrito_id, correo, contrasena, respuestas: [{ pregunta_id, respuesta }] }
+// datos: { tipo_identificacion, identificacion, telefono, distrito_id, correo, contrasena,
+//          respuestas: [{ pregunta_id, respuesta }] }
 async function registrar(datos, req) {
-  // HU-23 · Cada dato se protege como corresponde antes de guardarlo
+  // El nombre se vuelve a pedir al TSE aquí: así se guarda el nombre real
+  // de esa identificación aunque alguien modifique lo que manda la app.
+  const persona = await tse.consultarPersona(datos.tipo_identificacion, datos.identificacion);
+
+  // HU-23 · Cada dato se protege como corresponde antes de guardarlo.
+  // La identificación (cédula, DIMEX o pasaporte) va en la columna cedula.
   const usuario = await authRepositorio.registrarUsuario({
-    nombre_completo: datos.nombre_completo,
-    cedula_cifrada: cifrar(datos.cedula),           // AES: se puede leer en el perfil
-    cedula_hash: hashCedula(datos.cedula),          // HMAC: para no repetir la cédula
+    nombre_completo: persona.nombre_completo,
+    cedula_cifrada: cifrar(persona.numero),         // AES: se puede leer en el perfil
+    cedula_hash: hashCedula(persona.numero),        // HMAC: para no repetir la identificación
     telefono_cifrado: cifrar(datos.telefono),       // AES
     distrito_id: datos.distrito_id,                 // ubicación (no es dato sensible)
     correo: datos.correo,
@@ -201,6 +214,7 @@ async function cambiarContrasenaVencida(pase, contrasenaNueva, req) {
 
 module.exports = {
   listarPreguntas,
+  consultarIdentificacion,
   registrar,
   verificarCorreo,
   reenviarVerificacion,
