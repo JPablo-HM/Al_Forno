@@ -2,6 +2,8 @@
 const pedidosRepositorio = require('./pedidos.repositorio');
 const menuRepositorio = require('../menu/menu.repositorio');
 const banco = require('../../utils/banco');
+const paypal = require('../../utils/paypal');
+const tipoCambioServicio = require('../tipo-cambio/tipo-cambio.servicio');
 const { segundosDesde } = require('../../utils/tiempo');
 const { errorCon } = require('../../utils/errores');
 
@@ -27,9 +29,9 @@ function armarComprobante({ pedido, productos }) {
     id: pedido.id,
     fecha: pedido.fecha,
     total: pedido.total,
-    metodo_pago: pedido.metodo_pago,         // 'Tarjeta' o 'SINPE Móvil'
-    detalle_pago: pedido.detalle_pago,       // 'Visa •••• 1111'
-    referencia_pago: pedido.referencia_pago, // referencia del banco
+    metodo_pago: pedido.metodo_pago,         // 'Tarjeta', 'SINPE Móvil' o 'PayPal'
+    detalle_pago: pedido.detalle_pago,       // 'Visa •••• 1111' o 'PayPal · $30,26'
+    referencia_pago: pedido.referencia_pago, // referencia del banco o de PayPal
     cliente: pedido.cliente,
     ...calcularEstado(pedido.fecha),
     productos, // [{ nombre, cantidad, precio_unitario, subtotal }]
@@ -49,18 +51,23 @@ async function calcularTotal(productos) {
   return total;
 }
 
-// ★ HU-07 / HU-08 · Pagar y crear el pedido.
+// ★ HU-07 / HU-08 · Pagar con tarjeta o SINPE Móvil y crear el pedido.
 // 1. Revisa que no venga el mismo producto dos veces.
 // 2. Calcula el total con los precios de la base.
 // 3. Cobra en el socio Banco Simulado (tarjeta o SINPE Móvil). Si el banco
 //    rechaza, NO se guarda nada (el carrito sigue en la app).
 // 4. Guarda el pedido con la forma de pago y la referencia del banco.
 // pago = { metodo_pago: 'Tarjeta', tarjeta: {...} } o { metodo_pago: 'SINPE Móvil', telefono }
-async function crearPedido(usuarioId, productos, pago) {
+// No puede venir el mismo producto dos veces en el carrito.
+function revisarRepetidos(productos) {
   const ids = productos.map((p) => p.producto_id);
   if (new Set(ids).size !== ids.length) {
     throw errorCon(400, 'Un producto viene repetido en el carrito');
   }
+}
+
+async function crearPedido(usuarioId, productos, pago) {
+  revisarRepetidos(productos);
 
   const total = await calcularTotal(productos);
   const descripcion = 'AL FORNO · Pedido para llevar';
@@ -92,4 +99,43 @@ async function obtenerPedido(id, usuarioId) {
   return armarComprobante(resultado);
 }
 
-module.exports = { crearPedido, listarMisPedidos, obtenerPedido };
+// ---------------------------------------------------------------------
+// PAGO CON PAYPAL (HU-08) · en 2 pasos, porque el cliente aprueba el
+// pago fuera de la app, en la página de PayPal.
+// ---------------------------------------------------------------------
+
+// Pagos de PayPal que esperan confirmación: orden → { usuarioId, productos, dolares }.
+// Se guardan aquí (en memoria) para que al confirmar se cobre exactamente
+// lo que se calculó y solo lo pueda confirmar el mismo cliente.
+// Si la API se reinicia a mitad de un pago, ese pago se pierde.
+const pagosPaypal = new Map();
+
+// Paso 1 · Calcula el total en colones, lo pasa a dólares con el tipo de
+// cambio de VENTA del BCCR y crea la orden en PayPal.
+// Devuelve { orden, link, dolares, venta }.
+async function iniciarPagoPaypal(usuarioId, productos) {
+  revisarRepetidos(productos);
+  const total = await calcularTotal(productos);
+  const { venta } = await tipoCambioServicio.obtenerTipoCambio();
+  const dolares = Math.round((total / venta) * 100) / 100; // 2 decimales
+
+  const { orden, link } = await paypal.crearOrden(dolares, 'AL FORNO · Pedido para llevar');
+  pagosPaypal.set(orden, { usuarioId, productos, dolares });
+  return { orden, link, dolares, venta };
+}
+
+// Paso 2 · El cliente ya aprobó en PayPal: se cobra y se guarda el pedido.
+async function confirmarPagoPaypal(usuarioId, orden) {
+  const pago = pagosPaypal.get(orden);
+  if (!pago || pago.usuarioId !== usuarioId) throw errorCon(404, 'El pago de PayPal no existe');
+
+  const referencia = await paypal.cobrarOrden(orden); // si no aprobó → 402
+  pagosPaypal.delete(orden);
+
+  const detalle = `PayPal · $${pago.dolares.toFixed(2).replace('.', ',')}`; // 'PayPal · $30,26'
+  return armarComprobante(await pedidosRepositorio.crearPedido(usuarioId, {
+    metodo: 'PayPal', detalle, referencia,
+  }, pago.productos));
+}
+
+module.exports = { crearPedido, listarMisPedidos, obtenerPedido, iniciarPagoPaypal, confirmarPagoPaypal };

@@ -59,7 +59,8 @@ router.use('/agenda', require('./agenda/agenda.rutas'));
 // Módulo Tipo de cambio (servicio web del BCCR): GET /api/tipo-cambio
 router.use('/tipo-cambio', require('./tipo-cambio/tipo-cambio.rutas'));
 
-// Módulo Pedidos (solo clientes con sesión): POST /api/pedidos, GET /api/pedidos, GET /api/pedidos/:id
+// Módulo Pedidos (solo clientes con sesión): POST /api/pedidos, GET /api/pedidos, GET /api/pedidos/:id,
+// POST /api/pedidos/paypal, POST /api/pedidos/paypal/confirmar
 router.use('/pedidos', require('./pedidos/pedidos.rutas'));
 
 // Módulo Reservas (solo clientes con sesión): GET /api/reservas/horas, POST /api/reservas,

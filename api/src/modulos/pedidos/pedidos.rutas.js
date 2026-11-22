@@ -13,6 +13,13 @@ const router = Router();
 // router.use aplica los dos middlewares a TODAS las rutas de este archivo.
 router.use(verificarToken, soloRol('CLIENTE'));
 
+// Reglas del carrito (las usan el pago normal y el de PayPal).
+const reglasProductos = [
+  body('productos').isArray({ min: 1 }).withMessage('El carrito está vacío'),
+  body('productos.*.producto_id').isInt({ min: 1 }).withMessage('Producto inválido').toInt(),
+  body('productos.*.cantidad').isInt({ min: 1, max: 10 }).withMessage('La cantidad debe ser de 1 a 10').toInt(),
+];
+
 // POST /api/pedidos (HU-07, HU-08) · Pagar y crear el pedido
 // Cuerpo: { productos: [{ producto_id, cantidad }],
 //           metodo_pago: 'Tarjeta' | 'SINPE Móvil',
@@ -25,9 +32,7 @@ const conSinpe = body('metodo_pago').equals('SINPE Móvil');
 
 router.post(
   '/',
-  body('productos').isArray({ min: 1 }).withMessage('El carrito está vacío'),
-  body('productos.*.producto_id').isInt({ min: 1 }).withMessage('Producto inválido').toInt(),
-  body('productos.*.cantidad').isInt({ min: 1, max: 10 }).withMessage('La cantidad debe ser de 1 a 10').toInt(),
+  reglasProductos,
   body('metodo_pago').isIn(['Tarjeta', 'SINPE Móvil']).withMessage('Elige cómo pagar'),
   // .if(...) → esa regla solo se revisa con ese método de pago.
   // customSanitizer quita los espacios: '4111 1111 1111 1111' → '4111111111111111'
@@ -44,6 +49,26 @@ router.post(
     const { productos, metodo_pago, tarjeta, telefono } = req.body;
     const comprobante = await pedidosServicio.crearPedido(req.usuario.id, productos, { metodo_pago, tarjeta, telefono });
     res.status(201).json(comprobante);
+  }
+);
+
+// POST /api/pedidos/paypal (HU-07, HU-08) · Paso 1 del pago con PayPal
+// Cuerpo: { productos: [{ producto_id, cantidad }] }
+// Responde { orden, link, dolares, venta }: la app abre el link para que el
+// cliente apruebe el pago en PayPal.
+router.post('/paypal', reglasProductos, validar, async (req, res) => {
+  res.status(201).json(await pedidosServicio.iniciarPagoPaypal(req.usuario.id, req.body.productos));
+});
+
+// POST /api/pedidos/paypal/confirmar (HU-07, HU-08) · Paso 2 del pago con PayPal
+// Cuerpo: { orden }. Cobra la orden ya aprobada y crea el pedido.
+// Responde el comprobante (igual que POST /api/pedidos).
+router.post(
+  '/paypal/confirmar',
+  body('orden').isString().trim().notEmpty().withMessage('Falta el pago de PayPal'),
+  validar,
+  async (req, res) => {
+    res.status(201).json(await pedidosServicio.confirmarPagoPaypal(req.usuario.id, req.body.orden));
   }
 );
 
