@@ -32,8 +32,8 @@ CREATE TABLE cerveza (
 
 -- Datos (5 cervezas artesanales; 3 disponibles esta semana)
 INSERT INTO cerveza (nombre, estilo, descripcion, disponible) VALUES
-  ('Sendero Lupulado', 'IPA',       'Aromática y amarga, con lúpulos cítricos.',           TRUE),
-  ('Brisa de Mango',   'Pale Ale',  'Ligera y frutal, con mango de la zona.',              TRUE),
-  ('Pico Blanco',      'Pale Ale',  'Dorada y equilibrada, fácil de tomar.',               TRUE),
-  ('Volcán Rojo',      'IPA',       'Rojiza, con notas de caramelo y final amargo.',       FALSE),
-  ('Noche de Cacao',   'Pale Ale',  'De temporada, con un toque de cacao costarricense.',  FALSE);
+  ('Cadejo Cítrico',   'IPA',       'Aromática y amarga, con lúpulos cítricos.',           TRUE),
+  ('Imperialita Mango', 'Pale Ale', 'Ligera y frutal, con mango de la zona.',              TRUE),
+  ('Pilsencilla',      'Pale Ale',  'Dorada y equilibrada, fácil de tomar.',               TRUE),
+  ('La Següita Roja',  'IPA',       'Rojiza, con notas de caramelo y final amargo.',       FALSE),
+  ('Llorona de Cacao', 'Pale Ale',  'De temporada, con un toque de cacao costarricense.',  FALSE);
