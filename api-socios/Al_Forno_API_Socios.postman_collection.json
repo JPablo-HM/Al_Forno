@@ -1,0 +1,324 @@
+{
+  "info": {
+    "name": "Al Forno · API de socios (Hotel Las Brumas)",
+    "description": "API de AL FORNO para socios comerciales (PHP, puerto 8000). El Hotel Las Brumas reserva mesas para sus huéspedes.\n\nArrancar en api-socios/:  php -S localhost:8000 index.php\n\nOrden sugerido: 1 → 2 → 3 → 4. La variable {{fecha}} se llena sola con la fecha de mañana; {{idReserva}} se guarda al crear una reserva.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "llave",
+      "value": "brumas_8ecdbabf96f4ce05fa99d861b715ed44"
+    },
+    {
+      "key": "fecha",
+      "value": ""
+    },
+    {
+      "key": "idReserva",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Si {{fecha}} está vacía, usa la fecha de mañana (AAAA-MM-DD, hora de Costa Rica)",
+          "if (!pm.collectionVariables.get('fecha')) {",
+          "  const manana = new Date(Date.now() - 6 * 3600 * 1000 + 24 * 3600 * 1000);",
+          "  pm.collectionVariables.set('fecha', manana.toISOString().slice(0, 10));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1 · GET disponibilidad",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Llave-Socio",
+            "value": "{{llave}}"
+          }
+        ],
+        "url": {
+          "raw": "{{url}}/disponibilidad?fecha={{fecha}}",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "disponibilidad"
+          ],
+          "query": [
+            {
+              "key": "fecha",
+              "value": "{{fecha}}"
+            }
+          ]
+        },
+        "description": "Las 11 horas (12:00 a 22:00) con sus espacios libres (máximo 3 por hora)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 · POST crear reserva",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Llave-Socio",
+            "value": "{{llave}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{url}}/reservas",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "reservas"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fecha\": \"{{fecha}}\",\n  \"hora\": \"19:00\",\n  \"personas\": 4\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Crea una reserva para huéspedes del hotel. Guarda el id en {{idReserva}}."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('idReserva', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 · GET consultar reserva",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Llave-Socio",
+            "value": "{{llave}}"
+          }
+        ],
+        "url": {
+          "raw": "{{url}}/reservas/{{idReserva}}",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "reservas",
+            "{{idReserva}}"
+          ]
+        },
+        "description": "Consulta una reserva del hotel (no puede ver las de los clientes de la app)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 · DELETE cancelar reserva",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-Llave-Socio",
+            "value": "{{llave}}"
+          }
+        ],
+        "url": {
+          "raw": "{{url}}/reservas/{{idReserva}}",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "reservas",
+            "{{idReserva}}"
+          ]
+        },
+        "description": "Cancela la reserva: el espacio vuelve a quedar libre en la app."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Errores",
+      "item": [
+        {
+          "name": "Sin llave → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/disponibilidad?fecha={{fecha}}",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "disponibilidad"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{fecha}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hora llena → 409 (enviar después de 3 reservas a las 19:00)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Llave-Socio",
+                "value": "{{llave}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/reservas",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha\": \"{{fecha}}\",\n  \"hora\": \"19:00\",\n  \"personas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Personas fuera de rango → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Llave-Socio",
+                "value": "{{llave}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/reservas",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha\": \"{{fecha}}\",\n  \"hora\": \"19:00\",\n  \"personas\": 9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
