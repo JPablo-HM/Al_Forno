@@ -271,7 +271,7 @@ CREATE TABLE reserva (
 
   PRIMARY KEY (id),
   FOREIGN KEY (usuario_id) REFERENCES usuario (id),
-  -- Índice: acelera contar las reservas de una fecha y hora (máximo 3)
+  -- Índice: acelera contar las reservas de una fecha y hora (máximo por hora)
   INDEX (fecha, hora)
 );
 

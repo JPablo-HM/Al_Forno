@@ -573,8 +573,8 @@ END $$
 -- =====================================================================
 
 -- ★ HU-10 · Crear una reserva.
--- Antes de llamarlo, la API valida: no fechas pasadas, máximo 30 días,
--- una de las horas que se ofrecen (12:00 a 22:00) y de 1 a 8 personas.
+-- Antes de llamarlo, la API valida: hoy, mañana o pasado mañana,
+-- una de las horas que se ofrecen (6 a 9 p.m.) y de 1 a 8 personas.
 -- Aquí se controla lo que depende de las otras reservas:
 --   · máximo p_maximo reservas confirmadas por hora (el número lo manda
 --     la API: MAXIMO_POR_HORA en reservas.servicio.js)

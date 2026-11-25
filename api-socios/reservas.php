@@ -5,20 +5,19 @@
 // Los 4 métodos que usa el socio Hotel Las Brumas para reservar mesas
 // para sus huéspedes. Las reglas son las MISMAS de la app (las repite
 // reservas.servicio.js de Node):
-//   · fecha desde hoy y hasta 30 días después
-//   · una de las horas de 12:00 a 22:00 y, si es hoy, que no haya pasado
+//   · fecha: hoy, mañana o pasado mañana
+//   · una de las horas (6, 7, 8 o 9 p.m.) y, si es hoy, que no haya pasado
 //   · de 1 a 8 personas
-// La base (sp_CrearReserva) controla el máximo de 3 reservas por hora,
+// La base (sp_CrearReserva) controla el máximo de 2 reservas por hora,
 // con el mismo candado GET_LOCK que usan los clientes de la app.
 // Así, lo que reserva el hotel le quita espacio a la app y al revés.
 // =====================================================================
 
-const HORAS_RESERVA = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-    '18:00', '19:00', '20:00', '21:00', '22:00'];
-const MAXIMO_POR_HORA = 3;
-const DIAS_ANTICIPACION = 30;
+const HORAS_RESERVA = ['18:00', '19:00', '20:00', '21:00'];
+const MAXIMO_POR_HORA = 2;
+const DIAS_ANTICIPACION = 2;  // hoy + 2 días = hoy, mañana y pasado mañana
 
-// Revisa la fecha ('YYYY-MM-DD'): que exista y que sea de hoy a 30 días.
+// Revisa la fecha ('YYYY-MM-DD'): que exista y que sea hoy, mañana o pasado mañana.
 function validarFecha($fecha): void
 {
     $dia = is_string($fecha) ? DateTime::createFromFormat('!Y-m-d', $fecha) : false;
@@ -32,7 +31,7 @@ function validarFecha($fecha): void
         responder(400, ['mensaje' => 'No se puede reservar en una fecha pasada', 'campo' => 'fecha']);
     }
     if ($fecha > $limite) {
-        responder(400, ['mensaje' => 'Solo se puede reservar con ' . DIAS_ANTICIPACION . ' días de anticipación', 'campo' => 'fecha']);
+        responder(400, ['mensaje' => 'Solo se puede reservar para hoy, mañana o pasado mañana', 'campo' => 'fecha']);
     }
 }
 
@@ -55,7 +54,7 @@ function armarReserva(array $r): array
 }
 
 // 1 · GET /disponibilidad?fecha=2026-11-25
-// Las 11 horas del día con sus espacios libres.
+// Las 4 horas del día con sus espacios libres.
 function disponibilidad($fecha): void
 {
     validarFecha($fecha);
@@ -67,7 +66,7 @@ function disponibilidad($fecha): void
         foreach ($ocupacion as $fila) {
             if (str_starts_with($fila['hora'], $hora)) $ocupadas = (int) $fila['ocupadas'];
         }
-        $libres = MAXIMO_POR_HORA - $ocupadas;
+        $libres = max(0, MAXIMO_POR_HORA - $ocupadas);  // nunca menos de 0
         $horas[] = [
             'hora'       => $hora,
             'libres'     => $libres,

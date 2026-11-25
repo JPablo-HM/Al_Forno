@@ -5,8 +5,8 @@
 // Se llega desde: pestaña Reservas → "Nueva reserva"
 // Lleva a: vuelve a la pestaña Reservas ("Ver mis reservas")
 //
-// Pasos: 1. día (hoy y los próximos 30)  2. hora (GET /api/reservas/horas;
-// las que tienen 3 reservas dicen "Sin espacio")  3. personas (1 a 8). "Confirmar reserva" → POST /api/reservas.
+// Pasos: 1. día (hoy, mañana o pasado mañana)  2. hora (6 a 9 p.m.; GET /api/reservas/horas;
+// las que tienen 2 reservas dicen "Sin espacio")  3. personas (1 a 8). "Confirmar reserva" → POST /api/reservas.
 // Al confirmarse muestra el resumen (HU-10).
 // La base revisa al guardar que la hora siga libre (candado GET_LOCK) y que
 // el cliente no tenga otra reserva ese día; si no, avisa con el mensaje.
@@ -24,11 +24,12 @@ import { COLORES } from '../config/config';
 const DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-// Los 31 días que se pueden escoger: hoy y los 30 siguientes.
+// Los 3 días que se pueden escoger: hoy, mañana y pasado mañana
+// (la API revisa lo mismo: DIAS_ANTICIPACION en reservas.servicio.js).
 // Cada uno: { fecha: '2026-10-17', titulo: 'Sáb', detalle: '17 oct' }
 function proximosDias() {
   const dias = [];
-  for (let i = 0; i <= 30; i++) {
+  for (let i = 0; i <= 2; i++) {
     const d = new Date();
     d.setDate(d.getDate() + i);
     const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -129,7 +130,7 @@ export default function NuevaReserva() {
             <Opcion
               key={h.hora}
               texto={h.horaTexto}
-              // "Sin espacio" si ya tiene 3; "1 lugar" si queda uno
+              // "Sin espacio" si ya llegó al máximo (2); "1 lugar" si queda uno
               subtexto={h.libres === 0 ? 'Sin espacio' : h.disponible ? `${h.libres} ${h.libres === 1 ? 'lugar' : 'lugares'}` : 'Ya pasó'}
               seleccionada={hora === h.hora}
               deshabilitada={!h.disponible}

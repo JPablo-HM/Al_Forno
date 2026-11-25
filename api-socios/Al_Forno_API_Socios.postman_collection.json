@@ -63,7 +63,7 @@
             }
           ]
         },
-        "description": "Las 11 horas (12:00 a 22:00) con sus espacios libres (máximo 3 por hora)."
+        "description": "Las 4 horas (6, 7, 8 y 9 p.m.) con sus espacios libres (máximo 2 por hora)."
       },
       "event": [
         {
@@ -118,7 +118,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Responde 201', () => pm.response.to.have.status(201));",
-              "pm.collectionVariables.set('idReserva', pm.response.json().id);"
+              "if (pm.response.code === 201) pm.collectionVariables.set('idReserva', pm.response.json().id); // solo si se creo (201)"
             ]
           }
         }
@@ -229,7 +229,7 @@
           ]
         },
         {
-          "name": "Hora llena → 409 (enviar después de 3 reservas a las 19:00)",
+          "name": "Hora llena → 409 (enviar después de 2 reservas a las 19:00)",
           "request": {
             "method": "POST",
             "header": [

@@ -3,7 +3,7 @@
 // Decisión del proyecto: las reservas NO dependen del horario del
 // restaurante. Todos los días se ofrecen las mismas horas (HORAS_RESERVA).
 // Reglas que sí se aplican aquí:
-//   · fecha desde hoy y hasta 30 días después
+//   · fecha: hoy, mañana o pasado mañana
 //   · la hora debe ser una de HORAS_RESERVA y, si es hoy, que no haya pasado
 // Reglas que aplica la base (sp_CrearReserva), porque dependen de las otras reservas:
 //   · máximo MAXIMO_POR_HORA reservas por hora (la API le pasa el número)
@@ -16,19 +16,19 @@ const { ahora, ZONA, formatearHora, formatearFechaLarga } = require('../../utils
 const dayjs = require('dayjs');
 const { errorCon } = require('../../utils/errores');
 
-// Horas que se ofrecen cada día: de 12:00 m.d. a 10:00 p.m.
-const HORAS_RESERVA = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-  '18:00', '19:00', '20:00', '21:00', '22:00'];
-const MAXIMO_POR_HORA = 3; // única definición: también se le pasa a sp_CrearReserva
-const DIAS_ANTICIPACION = 30;
+// Reglas sencillas para que la demo y las pruebas sean rápidas (24 nov 2026):
+// Horas que se ofrecen cada día: 6, 7, 8 y 9 p.m.
+const HORAS_RESERVA = ['18:00', '19:00', '20:00', '21:00'];
+const MAXIMO_POR_HORA = 2; // única definición: también se le pasa a sp_CrearReserva
+const DIAS_ANTICIPACION = 2; // hoy + 2 días = hoy, mañana y pasado mañana
 
-// Revisa la fecha ('YYYY-MM-DD'): desde hoy y hasta 30 días.
+// Revisa la fecha ('YYYY-MM-DD'): hoy, mañana o pasado mañana.
 function validarFecha(fecha) {
   const hoy = ahora().format('YYYY-MM-DD');
   const limite = ahora().add(DIAS_ANTICIPACION, 'day').format('YYYY-MM-DD');
   // Las fechas en formato YYYY-MM-DD se pueden comparar como texto.
   if (fecha < hoy) throw errorCon(400, 'No se puede reservar en una fecha pasada');
-  if (fecha > limite) throw errorCon(400, `Solo se puede reservar con ${DIAS_ANTICIPACION} días de anticipación`);
+  if (fecha > limite) throw errorCon(400, 'Solo se puede reservar para hoy, mañana o pasado mañana');
 }
 
 // true si la fecha es hoy y esa hora ya pasó (no se puede reservar).
@@ -52,14 +52,15 @@ function armarReserva(r) {
 
 // HU-10 · Horas de una fecha con sus espacios libres.
 // Devuelve [{ hora: '18:00', horaTexto: '6:00 p.m.', libres: 1, disponible: true }]
-// disponible = false si ya tiene 3 reservas ("Sin espacio") o si ya pasó.
+// disponible = false si ya tiene MAXIMO_POR_HORA reservas ("Sin espacio") o si ya pasó.
 async function listarHoras(fecha) {
   validarFecha(fecha);
   const ocupacion = await reservasRepositorio.listarOcupacion(fecha);
 
   return HORAS_RESERVA.map((hora) => {
     const fila = ocupacion.find((o) => o.hora.startsWith(hora));
-    const libres = MAXIMO_POR_HORA - (fila ? fila.ocupadas : 0);
+    // Math.max: nunca menos de 0 (por si hay reservas de cuando el máximo era 3)
+    const libres = Math.max(0, MAXIMO_POR_HORA - (fila ? fila.ocupadas : 0));
     return {
       hora,
       horaTexto: formatearHora(hora),
