@@ -6,7 +6,8 @@
 // Lleva a: /pago ("Confirmar y pagar")
 //
 // Muestra el pedido completo antes de pagar: que es para llevar, los
-// productos con cantidad y subtotal, el total y el nombre del cliente.
+// productos con cantidad y subtotal, el total (y su equivalente en dólares
+// con el tipo de cambio del BCCR, HU-27) y el nombre del cliente.
 // Solo lee datos (carrito y sesión); no cambia nada.
 // =====================================================================
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
@@ -15,6 +16,7 @@ import { useCarrito } from '../context/CarritoContext';
 import { useSesion } from '../context/SesionContext';
 import { formatearColones } from '../utils/formato';
 import Boton from '../components/Boton';
+import TotalEnDolares from '../components/TotalEnDolares';
 import { COLORES } from '../config/config';
 
 export default function ResumenPedido() {
@@ -44,6 +46,7 @@ export default function ResumenPedido() {
           <Text style={estilos.totalTexto}>Total</Text>
           <Text style={estilos.totalMonto}>{formatearColones(total)}</Text>
         </View>
+        <TotalEnDolares total={total} />
       </View>
 
       <View style={estilos.tarjeta}>
