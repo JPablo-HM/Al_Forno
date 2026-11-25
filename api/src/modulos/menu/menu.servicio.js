@@ -6,7 +6,7 @@ const menuRepositorio = require('./menu.repositorio');
 // La base devuelve una lista plana de productos; aquí se agrupan para que
 // la app solo tenga que dibujarlos:
 //   [ { categoria: 'Pizzas', productos: [ {id, nombre, descripcion, precio}, ... ] },
-//     { categoria: 'Cucina italiana', productos: [...] }, ... ]
+//     { categoria: 'Cervezas', productos: [...] }, ... ]
 // Una categoría sin productos activos no aparece.
 async function obtenerMenu() {
   const productos = await menuRepositorio.listarMenu();

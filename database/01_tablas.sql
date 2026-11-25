@@ -204,7 +204,7 @@ CREATE TABLE producto (
   nombre       VARCHAR(80)  NOT NULL,
   descripcion  VARCHAR(300) NOT NULL,
   -- El orden del ENUM es el orden en que salen las categorías en el menú
-  categoria    ENUM('Pizzas', 'Cucina italiana', 'Coctelería', 'Cervezas') NOT NULL,
+  categoria    ENUM('Pizzas', 'Cervezas') NOT NULL,
   precio       INT UNSIGNED NOT NULL,          -- colones enteros
   activo       BOOLEAN      NOT NULL DEFAULT TRUE,   -- "eliminar" lo desactiva (no se borra)
 

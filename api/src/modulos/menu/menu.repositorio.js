@@ -3,8 +3,8 @@
 const pool = require('../../config/db');
 
 // HU-03 · Productos activos → sp_ListarMenu()
-// Vienen ordenados por categoría (en el orden del ENUM: Pizzas, Cucina
-// italiana, Coctelería, Cervezas) y luego por nombre.
+// Vienen ordenados por categoría (en el orden del ENUM: Pizzas, Cervezas)
+// y luego por nombre.
 // resultados[0] = las filas del SELECT del procedimiento.
 async function listarMenu() {
   const [resultados] = await pool.query('CALL sp_ListarMenu()');

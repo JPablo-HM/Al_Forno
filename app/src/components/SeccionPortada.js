@@ -31,7 +31,7 @@ export default function SeccionPortada() {
 
       <Text style={estilos.descripcion}>
         Masa de fermentación lenta, ingredientes frescos y un horno de leña que marca el ritmo
-        de la casa. Cocina italiana, cócteles clásicos y cerveza fría en un ambiente cálido.
+        de la casa. Pizzas al horno de leña y cerveza fría en un ambiente cálido.
       </Text>
     </View>
   );

@@ -6,8 +6,8 @@
 // Lleva a: /carrito (ícono 🛒 de la barra superior; pide sesión)
 //
 // Pide el menú a la API (GET /api/menu), que ya viene agrupado por
-// categoría. Arriba están los botones de categoría (Pizzas, Cucina
-// italiana, Coctelería, Cervezas): al tocar uno se muestran solo sus
+// categoría. Arriba están los botones de categoría (Pizzas y
+// Cervezas): al tocar uno se muestran solo sus
 // productos. Cada producto es un <TarjetaProducto>.
 // =====================================================================
 import { useEffect, useState } from 'react';
