@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  01_tablas.sql  →  Estructura: tablas y llaves
 --
---  Versión 2.4 · 20 de noviembre de 2026 (formas de pago, sin administrador)
+--  Versión 2.5 · 23 de noviembre de 2026 (socio Hotel Las Brumas)
 --  Motor: MySQL 8.0 o superior
 --  Basado en: Historias de usuario v2.7
 --
@@ -18,6 +18,10 @@
 -- ---------------------------------------------------------------------
 --  DECISIONES DE DISEÑO (versión 2.0)
 --  · 15 tablas: solo lo que piden las historias de usuario.
+--  · 23 nov 2026 (v2.5): rol SOCIO para la API de socios (api-socios/, PHP).
+--    El Hotel Las Brumas es un usuario SOCIO que reserva mesas para sus
+--    huéspedes. No puede entrar a la app (queda PENDIENTE y la API de
+--    Node solo deja pasar a CLIENTE).
 --  · 20 nov 2026 (v2.4): el pedido guarda la forma de pago (Tarjeta,
 --    SINPE Móvil o PayPal), el detalle que ve el cliente ("Visa •••• 1111")
 --    y la referencia del banco. El cobro lo hace el socio Banco Simulado,
@@ -163,7 +167,7 @@ CREATE TABLE distrito (
 -- =====================================================================
 CREATE TABLE usuario (
   id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  rol                    ENUM('CLIENTE') NOT NULL DEFAULT 'CLIENTE',
+  rol                    ENUM('CLIENTE', 'SOCIO') NOT NULL DEFAULT 'CLIENTE',  -- SOCIO: Hotel Las Brumas (v2.5)
   nombre_completo        VARCHAR(100) NOT NULL,
   cedula                 VARCHAR(100) NULL,      -- cifrada con AES (9 dígitos, lo valida la API)
   cedula_hash            CHAR(64)     NULL,      -- hash de la cédula, para no repetirla

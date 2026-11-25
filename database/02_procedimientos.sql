@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  02_procedimientos.sql  →  Procedimientos almacenados
 --
---  Versión 2.4 · 20 de noviembre de 2026 (formas de pago, sin administrador)
+--  Versión 2.5 · 23 de noviembre de 2026 (socio Hotel Las Brumas)
 --  Ejecutar después de 01_tablas.sql. Se puede volver a ejecutar sin
 --  borrar datos (cada procedimiento se elimina y se vuelve a crear).
 --
@@ -578,7 +578,9 @@ END $$
 -- Aquí se controla lo que depende de las otras reservas:
 --   · máximo p_maximo reservas confirmadas por hora (el número lo manda
 --     la API: MAXIMO_POR_HORA en reservas.servicio.js)
---   · 1 reserva confirmada por día por cliente
+--   · 1 reserva confirmada por día por cliente (v2.5: solo rol CLIENTE;
+--     el socio Hotel Las Brumas puede hacer varias por día, pero también
+--     respeta el máximo por hora)
 -- CANDADO: GET_LOCK pide un "candado" con el nombre de la fecha. Si dos
 -- clientes reservan para el mismo día al mismo tiempo, el segundo espera
 -- (máximo 10 segundos) a que el primero termine. Así los dos no pueden
@@ -608,9 +610,11 @@ BEGIN
       MESSAGE_TEXT = 'Hay muchas reservas en este momento. Intente de nuevo';
   END IF;
 
-  -- 2. HU-10: una sola reserva confirmada por día
-  IF EXISTS (SELECT 1 FROM reserva
-              WHERE usuario_id = p_usuario_id AND fecha = p_fecha AND estado = 'Confirmada') THEN
+  -- 2. HU-10: una sola reserva confirmada por día (solo para clientes)
+  IF EXISTS (SELECT 1 FROM reserva r
+               JOIN usuario u ON u.id = r.usuario_id
+              WHERE r.usuario_id = p_usuario_id AND u.rol = 'CLIENTE'
+                AND r.fecha = p_fecha AND r.estado = 'Confirmada') THEN
     SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 5409,
       MESSAGE_TEXT = 'Ya tiene una reserva para ese día';
   END IF;

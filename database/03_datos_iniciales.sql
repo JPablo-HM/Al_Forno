@@ -2,7 +2,7 @@
 --  AL FORNO · Base de datos
 --  03_datos_iniciales.sql  →  Datos con los que arranca el sistema
 --
---  Versión 2.4 · 20 de noviembre de 2026 (sin administrador)
+--  Versión 2.5 · 23 de noviembre de 2026 (socio Hotel Las Brumas)
 --  Ejecutar después de 01_tablas.sql y 02_procedimientos.sql.
 --
 --  El horario y los datos del restaurante (dirección, teléfono) NO están
@@ -188,6 +188,18 @@ INSERT INTO producto (categoria, nombre, descripcion, precio) VALUES
 INSERT INTO promocion (titulo, descripcion) VALUES
   ('2x1 en Margherita',
    'Pedí una Margherita y la segunda va por la casa. Válido los martes hasta el 31 de octubre.');
+
+-- ---------------------------------------------------------------------
+-- 5. Socio Hotel Las Brumas (v2.5) · usa la API de socios (api-socios/)
+--    para reservar mesas para sus huéspedes.
+--    · rol SOCIO y estado PENDIENTE: NO puede entrar a la app.
+--    · La contraseña es un hash bcrypt de un texto al azar que nadie
+--      conoce: el hotel no usa contraseña, usa su llave (X-Llave-Socio).
+--    · Su id va en api-socios/.env (HOTEL_USUARIO_ID).
+-- ---------------------------------------------------------------------
+INSERT INTO usuario (rol, nombre_completo, correo, contrasena_hash) VALUES
+  ('SOCIO', 'Hotel Las Brumas', 'reservas@hotellasbrumas.cr',
+   '$2b$10$VSEm3qFYJxQRGIqCRUFIeur.ApsV9DgvB9JOeVS9MUUdz3dJlu0qW');
 
 COMMIT;
 
